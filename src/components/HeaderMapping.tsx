@@ -1,13 +1,10 @@
 import { HeaderMapping as HeaderMappingType } from '../types';
-import { Globe, Settings } from 'lucide-react';
 import { useEffect } from 'react';
 
 interface HeaderMappingProps {
   headers: string[];
   mapping: Partial<HeaderMappingType>;
   onMappingChange: (mapping: Partial<HeaderMappingType>) => void;
-  isGlobalMapping?: boolean;
-  onGlobalMappingToggle?: () => void;
   sheetName?: string;
   onMappingStatusChange?: (status: any) => void; // 新增：回调函数，用于向父组件传递映射状态
 }
@@ -29,8 +26,6 @@ export const HeaderMapping = ({
   headers, 
   mapping, 
   onMappingChange,
-  isGlobalMapping = false,
-  onGlobalMappingToggle,
   sheetName,
   onMappingStatusChange
 }: HeaderMappingProps) => {
@@ -40,16 +35,6 @@ export const HeaderMapping = ({
 
   // 验证表头映射配置的有效性
   const getMappingStatus = () => {
-    if (isGlobalMapping) {
-      return {
-        status: 'info',
-        message: '使用全局映射',
-        description: '当前使用全局表头映射配置',
-        color: 'info',
-        sheetName: sheetName
-      };
-    }
-
     // 检查必填字段是否已映射
     const requiredFields = Object.entries(MAPPING_CONFIG)
       .filter(([_, config]) => config.required)
@@ -96,36 +81,7 @@ export const HeaderMapping = ({
             </span>
           )}
         </h3>
-        
-        {onGlobalMappingToggle && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                全局映射
-              </span>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isGlobalMapping}
-                onChange={onGlobalMappingToggle}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-        )}
       </div>
-      
-      {isGlobalMapping && (
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-            <Globe className="w-4 h-4" />
-            <span>当前使用全局表头映射配置</span>
-          </div>
-        </div>
-      )}
       
       <p className="text-sm text-gray-600 dark:text-gray-400">
         将Excel列名与题目属性进行对应
@@ -142,7 +98,6 @@ export const HeaderMapping = ({
               value={mapping[key as keyof HeaderMappingType] || ''}
               onChange={(e) => handleChange(key as keyof HeaderMappingType, e.target.value)}
               className="input"
-              disabled={isGlobalMapping}
             >
               <option value="">-- 请选择 --</option>
               {headers.map((header) => (
@@ -187,15 +142,6 @@ export const HeaderMapping = ({
           </span>
         </div>
       </div>
-      
-      {isGlobalMapping && (
-        <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-300">
-            <Settings className="w-4 h-4" />
-            <span>全局映射已启用，请在上方切换为独立映射以进行配置</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }; 

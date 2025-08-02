@@ -1,6 +1,6 @@
 import { MultiSheetConfig, SheetConfig, HeaderMapping } from '../types';
 import { Check, Settings, Globe, FileText, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getSheetData } from '../utils/excel';
 
 interface SheetSelectorProps {
@@ -8,7 +8,6 @@ interface SheetSelectorProps {
   multiSheetConfig: MultiSheetConfig;
   onMultiSheetConfigChange: (config: MultiSheetConfig) => void;
   workbook?: any;
-  mappingStatuses?: {[sheetName: string]: any}; // 新增：映射状态
 }
 
 interface SheetMappingModalProps {
@@ -26,6 +25,27 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
     onClose();
   };
 
+  // 处理ESC键退出
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [onClose]);
+
+  // 处理点击空白处退出
+  const handleBackdropClick = (event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  };
+
   const MAPPING_CONFIG = {
     question: { label: '题干', required: true },
     type: { label: '题型', required: true },
@@ -40,7 +60,10 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
   } as const;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -106,7 +129,6 @@ export const SheetSelector = ({
   multiSheetConfig,
   onMultiSheetConfigChange,
   workbook,
-  mappingStatuses = {}
 }: SheetSelectorProps) => {
   const [selectedSheetForMapping, setSelectedSheetForMapping] = useState<SheetConfig | null>(null);
   const [sheetHeaders, setSheetHeaders] = useState<string[]>([]);
@@ -116,8 +138,13 @@ export const SheetSelector = ({
       ...sheet,
       isSelected: true
     }));
+    
+    // 检查是否需要更新统一表头映射状态
+    const allUseGlobalMapping = newSheets.every(sheet => sheet.useGlobalMapping);
+    
     onMultiSheetConfigChange({
       ...multiSheetConfig,
+      useGlobalMapping: allUseGlobalMapping,
       sheets: newSheets
     });
   };
@@ -127,6 +154,8 @@ export const SheetSelector = ({
       ...sheet,
       isSelected: false
     }));
+    
+    // 当没有选中工作表时，保持统一表头映射状态不变
     onMultiSheetConfigChange({
       ...multiSheetConfig,
       sheets: newSheets
@@ -134,9 +163,18 @@ export const SheetSelector = ({
   };
 
   const handleToggleGlobalMapping = () => {
+    const newUseGlobalMapping = !multiSheetConfig.useGlobalMapping;
+    
+    // 当开启统一表头映射时，将所有工作表切换至使用全局映射
+    const newSheets = multiSheetConfig.sheets.map(sheet => ({
+      ...sheet,
+      useGlobalMapping: newUseGlobalMapping ? true : sheet.useGlobalMapping
+    }));
+    
     onMultiSheetConfigChange({
       ...multiSheetConfig,
-      useGlobalMapping: !multiSheetConfig.useGlobalMapping
+      useGlobalMapping: newUseGlobalMapping,
+      sheets: newSheets
     });
   };
 
@@ -146,8 +184,14 @@ export const SheetSelector = ({
         ? { ...sheet, isSelected: !sheet.isSelected }
         : sheet
     );
+    
+    // 检查是否需要更新统一表头映射状态
+    const selectedSheets = newSheets.filter(sheet => sheet.isSelected);
+    const allUseGlobalMapping = selectedSheets.length > 0 && selectedSheets.every(sheet => sheet.useGlobalMapping);
+    
     onMultiSheetConfigChange({
       ...multiSheetConfig,
+      useGlobalMapping: allUseGlobalMapping,
       sheets: newSheets
     });
   };
@@ -158,8 +202,14 @@ export const SheetSelector = ({
         ? { ...sheet, useGlobalMapping: !sheet.useGlobalMapping }
         : sheet
     );
+    
+    // 检查是否需要更新统一表头映射状态
+    const selectedSheets = newSheets.filter(sheet => sheet.isSelected);
+    const allUseGlobalMapping = selectedSheets.length > 0 && selectedSheets.every(sheet => sheet.useGlobalMapping);
+    
     onMultiSheetConfigChange({
       ...multiSheetConfig,
+      useGlobalMapping: allUseGlobalMapping,
       sheets: newSheets
     });
   };
@@ -186,6 +236,47 @@ export const SheetSelector = ({
 
   const selectedCount = multiSheetConfig.sheets.filter(sheet => sheet.isSelected).length;
   const totalCount = multiSheetConfig.sheets.length;
+
+  // 检查配置有效性
+  const checkConfigurationValidity = () => {
+    const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
+    
+    if (selectedSheets.length === 0) {
+      return { isValid: false, message: '请选择工作表' };
+    }
+
+    // 检查全局映射配置
+    const requiredFields = ['question', 'type', 'answer'];
+    const missingFields = requiredFields.filter(field => !multiSheetConfig.globalMapping[field as keyof HeaderMapping]);
+    
+    if (missingFields.length > 0) {
+      return { isValid: false, message: '全局映射配置不完整' };
+    }
+
+    // 检查独立映射配置（如果有工作表使用独立映射）
+    if (!multiSheetConfig.useGlobalMapping) {
+      const invalidSheets = selectedSheets.filter(sheet => {
+        if (sheet.useGlobalMapping) {
+          // 使用全局映射的工作表，检查全局映射是否完整
+          return requiredFields.some(field => !multiSheetConfig.globalMapping[field as keyof HeaderMapping]);
+        } else {
+          // 使用独立映射的工作表，检查独立映射是否完整
+          return requiredFields.some(field => !sheet.mapping[field as keyof HeaderMapping]);
+        }
+      });
+
+      if (invalidSheets.length > 0) {
+        return { 
+          isValid: false, 
+          message: `配置有误：${invalidSheets.map(s => s.sheetName).join('、')} 映射不完整` 
+        };
+      }
+    }
+
+    return { isValid: true, message: '配置有效' };
+  };
+
+  const configValidity = checkConfigurationValidity();
 
   return (
     <div className="space-y-6">
@@ -254,7 +345,7 @@ export const SheetSelector = ({
                       onChange={() => handleSheetToggle(sheet.sheetName)}
                       className="sr-only peer"
                     />
-                    <div className="w-5 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded peer dark:bg-gray-700 peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded after:h-3 after:w-3 after:transition-all dark:border-gray-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
                   </label>
                   
                   <div className="flex items-center gap-2">
@@ -263,7 +354,7 @@ export const SheetSelector = ({
                       {sheet.sheetName}
                     </span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      ({sheet.questionCount} 题)
+                      ({sheet.questionCount} 条数据)
                     </span>
                   </div>
                 </div>
@@ -271,27 +362,32 @@ export const SheetSelector = ({
                 <div className="flex items-center gap-2">
                   {sheet.isSelected && (
                     <>
-                      {!multiSheetConfig.useGlobalMapping && (
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={sheet.useGlobalMapping}
-                            onChange={() => handleSheetUseGlobalMapping(sheet.sheetName)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-4 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded peer dark:bg-gray-700 peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded after:h-2 after:w-2 after:transition-all dark:border-gray-600"></div>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                            使用全局映射
-                          </span>
-                        </label>
-                      )}
+                      {/* 使用全局映射按钮 */}
+                      <button
+                        onClick={() => handleSheetUseGlobalMapping(sheet.sheetName)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                          sheet.useGlobalMapping
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
+                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
+                        }`}
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>使用全局映射</span>
+                      </button>
                       
+                      {/* 独立映射按钮 */}
                       <button
                         onClick={() => handleOpenMappingModal(sheet)}
-                        className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        title="配置表头映射"
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                          !sheet.useGlobalMapping
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-700'
+                            : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 border border-gray-200 dark:border-gray-600 cursor-not-allowed'
+                        }`}
+                        disabled={sheet.useGlobalMapping}
+                        title={sheet.useGlobalMapping ? "请先取消使用全局映射" : "配置表头映射"}
                       >
                         <Settings className="w-4 h-4" />
+                        <span>独立映射</span>
                       </button>
                     </>
                   )}
@@ -323,20 +419,14 @@ export const SheetSelector = ({
                 已选择 {selectedCount} / {totalCount} 个工作表
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                总计题目数: {multiSheetConfig.sheets
+                总计数据条数: {multiSheetConfig.sheets
                   .filter(sheet => sheet.isSelected)
-                  .reduce((sum, sheet) => sum + sheet.questionCount, 0)} 题
+                  .reduce((sum, sheet) => sum + sheet.questionCount, 0)} 条
               </p>
             </div>
             <div className="flex flex-col items-end">
-              {/* 映射状态显示 */}
+              {/* 配置状态显示 */}
               {(() => {
-                const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
-                const hasMappingErrors = selectedSheets.some(sheet => {
-                  const status = mappingStatuses[sheet.sheetName];
-                  return status && status.status === 'error';
-                });
-
                 if (selectedCount === 0) {
                   return (
                     <div className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
@@ -345,19 +435,14 @@ export const SheetSelector = ({
                   );
                 }
 
-                if (hasMappingErrors) {
-                  const errorSheets = selectedSheets.filter(sheet => {
-                    const status = mappingStatuses[sheet.sheetName];
-                    return status && status.status === 'error';
-                  });
-
+                if (!configValidity.isValid) {
                   return (
                     <div className="flex flex-col items-end">
                       <div className="px-3 py-1 rounded-full text-sm font-medium bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-200">
                         配置有误
                       </div>
-                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {errorSheets.map(sheet => sheet.sheetName).join('、')} 映射不完整
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-48 text-right">
+                        {configValidity.message}
                       </div>
                     </div>
                   );

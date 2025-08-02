@@ -9,6 +9,7 @@ import { ResultsScreen } from './components/ResultsScreen';
 import { ReviewScreen } from './components/ReviewScreen';
 import { getSheetData, processMultiSheetQuestions, autoMapHeaders } from './utils/excel';
 import { generateQuizData, calculateResults } from './utils/quiz';
+import { loadExamConfig, saveExamConfig } from './utils/storage';
 import { Question, QuizSettings as QuizSettingsType, HeaderMapping as HeaderMappingType, QuestionResult, ExamSettings, MultiSheetConfig, SheetConfig } from './types';
 
 type Screen = 'upload' | 'config' | 'quiz' | 'results' | 'review';
@@ -45,33 +46,18 @@ export default function App() {
     useGlobalMapping: false
   });
 
-  // 新增：映射状态管理
-  const [mappingStatuses, setMappingStatuses] = useState<{[sheetName: string]: any}>({});
-
   // 从localStorage加载考试配置
   useEffect(() => {
-    try {
-      const savedExamSettings = localStorage.getItem('examSettings');
-      if (savedExamSettings) {
-        const parsedSettings = JSON.parse(savedExamSettings);
-        // 确保数据格式正确
-        if (parsedSettings && parsedSettings.configs) {
-          setExamSettings(parsedSettings);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load exam settings from storage:', error);
+    const savedExamSettings = loadExamConfig();
+    if (savedExamSettings) {
+      setExamSettings(savedExamSettings);
     }
   }, []);
 
   // 保存考试配置到localStorage
   const handleExamSettingsChange = (settings: ExamSettings) => {
     setExamSettings(settings);
-    try {
-      localStorage.setItem('examSettings', JSON.stringify(settings));
-    } catch (error) {
-      console.error('Failed to save exam settings to storage:', error);
-    }
+    saveExamConfig(settings);
   };
 
   const handleFileLoaded = (workbook: any) => {
@@ -110,6 +96,42 @@ export default function App() {
     
     // 更新题目数量统计
     updateQuestionCounts(config);
+    
+    // 检查新选中工作表的表头映射合法性
+    const newlySelectedSheets = config.sheets.filter(sheet => 
+      sheet.isSelected && 
+      !multiSheetConfig.sheets.find(prevSheet => 
+        prevSheet.sheetName === sheet.sheetName && prevSheet.isSelected
+      )
+    );
+    
+    if (newlySelectedSheets.length > 0) {
+      // 检查全局映射是否完整
+      const requiredFields = ['question', 'type', 'answer'];
+      const isGlobalMappingIncomplete = requiredFields.some(field => !config.globalMapping[field as keyof HeaderMappingType]);
+      
+      if (isGlobalMappingIncomplete) {
+        alert('全局表头映射配置不完整，请先完成全局映射配置');
+        return;
+      }
+      
+      // 如果使用独立映射模式，检查独立映射配置
+      if (!config.useGlobalMapping) {
+        const invalidSheets = newlySelectedSheets.filter(sheet => {
+          if (sheet.useGlobalMapping) {
+            // 使用全局映射的工作表，检查全局映射是否完整
+            return requiredFields.some(field => !config.globalMapping[field as keyof HeaderMappingType]);
+          } else {
+            // 使用独立映射的工作表，检查独立映射是否完整
+            return requiredFields.some(field => !sheet.mapping[field as keyof HeaderMappingType]);
+          }
+        });
+        
+        if (invalidSheets.length > 0) {
+          alert(`以下工作表的表头映射配置不完整：${invalidSheets.map(s => s.sheetName).join(', ')}`);
+        }
+      }
+    }
   };
 
   const updateQuestionCounts = (config: MultiSheetConfig) => {
@@ -125,14 +147,8 @@ export default function App() {
     const { headers } = getSheetData(workbook, firstSelectedSheet.sheetName);
     setHeaders(headers || []);
 
-    // 如果使用全局映射，更新当前映射
-    if (config.useGlobalMapping) {
-      setMapping(config.globalMapping);
-    } else {
-      // 使用第一个选中工作表的映射
-      const firstSheet = selectedSheets.find(sheet => !sheet.useGlobalMapping) || selectedSheets[0];
-      setMapping(firstSheet.mapping);
-    }
+    // 表头映射现在默认为全局映射
+    setMapping(config.globalMapping);
 
     // 处理所有选中工作表的数据
     const allQuestions = processMultiSheetQuestions(workbook, selectedSheets, config.globalMapping);
@@ -142,57 +158,16 @@ export default function App() {
   const handleMappingChange = (mapping: Partial<HeaderMappingType>) => {
     setMapping(mapping);
     
-    // 如果当前使用全局映射，则更新全局映射
-    if (multiSheetConfig.useGlobalMapping) {
-      setMultiSheetConfig(prev => ({
-        ...prev,
-        globalMapping: mapping
-      }));
-    } else {
-      // 更新当前选中工作表的映射
-      const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
-      if (selectedSheets.length > 0) {
-        const firstSelectedSheet = selectedSheets[0];
-        setMultiSheetConfig(prev => ({
-          ...prev,
-          sheets: prev.sheets.map(sheet => 
-            sheet.sheetName === firstSelectedSheet.sheetName
-              ? { ...sheet, mapping }
-              : sheet
-          )
-        }));
-      }
-    }
-  };
-
-  const handleGlobalMappingToggle = () => {
-    const newUseGlobalMapping = !multiSheetConfig.useGlobalMapping;
-    
+    // 表头映射现在默认为全局映射
     setMultiSheetConfig(prev => ({
       ...prev,
-      useGlobalMapping: newUseGlobalMapping
+      globalMapping: mapping
     }));
-    
-    // 切换时更新当前映射
-    if (newUseGlobalMapping) {
-      setMapping(multiSheetConfig.globalMapping);
-    } else {
-      // 切换到独立映射时，使用第一个选中工作表的映射
-      const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
-      if (selectedSheets.length > 0) {
-        const firstSheet = selectedSheets.find(sheet => !sheet.useGlobalMapping) || selectedSheets[0];
-        setMapping(firstSheet.mapping);
-      }
-    }
   };
 
-  // 新增：处理映射状态变化
-  const handleMappingStatusChange = (sheetName: string, status: any) => {
-    setMappingStatuses(prev => ({
-      ...prev,
-      [sheetName]: status
-    }));
-  };
+
+
+
 
   const handleStartQuiz = () => {
     const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
@@ -383,7 +358,6 @@ export default function App() {
                 multiSheetConfig={multiSheetConfig}
                 onMultiSheetConfigChange={handleMultiSheetConfigChange}
                 workbook={workbook}
-                mappingStatuses={mappingStatuses}
               />
             </div>
 
@@ -394,15 +368,7 @@ export default function App() {
                   headers={headers}
                   mapping={mapping}
                   onMappingChange={handleMappingChange}
-                  isGlobalMapping={multiSheetConfig.useGlobalMapping}
-                  onGlobalMappingToggle={handleGlobalMappingToggle}
-                  sheetName={multiSheetConfig.useGlobalMapping ? '全局映射' : multiSheetConfig.sheets.find(s => s.isSelected && !s.useGlobalMapping)?.sheetName}
-                  onMappingStatusChange={(status) => {
-                    const sheetName = multiSheetConfig.useGlobalMapping ? 'global' : multiSheetConfig.sheets.find(s => s.isSelected && !s.useGlobalMapping)?.sheetName;
-                    if (sheetName) {
-                      handleMappingStatusChange(sheetName, status);
-                    }
-                  }}
+                  sheetName="全局映射"
                 />
               </div>
             )}

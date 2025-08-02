@@ -115,7 +115,7 @@ export const QuizSettings = ({
               { value: 'recite', label: '背题模式', desc: '直接显示答案，用于记忆' },
               { value: 'exam', label: '考试模式', desc: '按题型配置出题数量和分值' }
             ].map((mode) => (
-              <label key={mode.value} className="relative flex cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 p-4 focus:outline-none">
+              <label key={mode.value} className="relative flex cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 p-4 focus:outline-none hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
                 <input
                   type="radio"
                   name="mode"
@@ -131,10 +131,14 @@ export const QuizSettings = ({
                       <p className="text-gray-500 dark:text-gray-400">{mode.desc}</p>
                     </div>
                   </div>
-                  <div className={`shrink-0 ${settings.mode === mode.value ? 'text-primary-600' : 'text-gray-400'}`}>
-                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <div className={`shrink-0 w-6 h-6 border-2 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    settings.mode === mode.value 
+                      ? 'border-primary-600 bg-primary-600' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {settings.mode === mode.value && (
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    )}
                   </div>
                 </div>
               </label>

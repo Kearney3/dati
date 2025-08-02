@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ExamConfig as ExamConfigType, ExamSettings, QuestionRange } from '../types';
+import { loadExamConfig, saveExamConfig } from '../utils/storage';
 
 interface ExamConfigProps {
   questionTypes: string[];
@@ -39,10 +40,9 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
   // 从localStorage加载配置
   const loadConfigsFromStorage = () => {
     try {
-      const saved = localStorage.getItem('examSettings');
-      if (saved) {
-        const examSettings = JSON.parse(saved);
-        return examSettings.configs || null;
+      const savedExamSettings = loadExamConfig();
+      if (savedExamSettings) {
+        return savedExamSettings.configs || null;
       }
     } catch (error) {
       console.error('Failed to load exam configs from storage:', error);
@@ -63,19 +63,11 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
         totalScore
       };
       
-      localStorage.setItem('examSettings', JSON.stringify(examSettings));
+      saveExamConfig(examSettings);
     } catch (error) {
       console.error('Failed to save exam configs to storage:', error);
     }
   }, []);
-
-  // 使用useMemo缓存选中的工作表信息，避免不必要的重新计算
-  const selectedSheetsInfo = useMemo(() => {
-    return {
-      count: selectedSheets.length,
-      totalQuestions
-    };
-  }, [selectedSheets.length, totalQuestions]);
 
   useEffect(() => {
     // Initialize configs for the 4 basic question types only
@@ -102,7 +94,18 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
       }));
       setConfigs(initialConfigs);
     }
-  }, [selectedSheetsInfo.count]); // 只依赖选中工作表数量，移除getQuestionTypeCount依赖
+  }, []); // 只在组件挂载时初始化一次，不依赖其他状态
+
+  // 当题目数量变化时，更新配置中的count值，但不重新初始化
+  useEffect(() => {
+    if (configs.length > 0) {
+      const updatedConfigs = configs.map((config: ExamConfigType) => ({
+        ...config,
+        count: Math.min(config.count, getQuestionTypeCount(config.questionType))
+      }));
+      setConfigs(updatedConfigs);
+    }
+  }, [questionTypeCounts, configs.length]); // 依赖题目类型统计和配置数量
 
   useEffect(() => {
     // Calculate totals and notify parent
