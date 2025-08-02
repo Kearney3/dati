@@ -200,7 +200,7 @@ export const QuizSettings = ({
               </div>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              0表示不限制题目数量，最大{maxQuestions}题（会收到答题范围影响）
+              0表示不限制题目数量，最大{maxQuestions}题（会受答题范围影响）
             </p>
           </div>
         )}
