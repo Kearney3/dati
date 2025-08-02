@@ -225,12 +225,15 @@ export const getExamStats = (results: QuestionResult[], examSettings: ExamSettin
   
   // Calculate total score based on correct answers
   let totalScore = 0;
+  let maxScore = 0;
+  
+  // 计算实际出题的总分
   results.forEach((result) => {
-    if (result.isCorrect) {
-      // Find the question type and its score
-      const questionType = result.questionType || '单选题'; // Default fallback
-      const config = examSettings.configs.find((c: any) => c.questionType === questionType);
-      if (config) {
+    const questionType = result.questionType || '单选题'; // Default fallback
+    const config = examSettings.configs.find((c: any) => c.questionType === questionType);
+    if (config) {
+      maxScore += config.score; // 每道题都计入满分
+      if (result.isCorrect) {
         totalScore += config.score;
       }
     }
@@ -242,6 +245,6 @@ export const getExamStats = (results: QuestionResult[], examSettings: ExamSettin
     incorrect: total - correct,
     accuracy: Math.round(accuracy * 10) / 10,
     totalScore,
-    maxScore: examSettings.totalScore
+    maxScore // 使用实际出题的总分，而不是配置的总分
   };
 }; 

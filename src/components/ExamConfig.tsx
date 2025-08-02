@@ -39,9 +39,10 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
   // 从localStorage加载配置
   const loadConfigsFromStorage = () => {
     try {
-      const saved = localStorage.getItem('examConfigs');
+      const saved = localStorage.getItem('examSettings');
       if (saved) {
-        return JSON.parse(saved);
+        const examSettings = JSON.parse(saved);
+        return examSettings.configs || null;
       }
     } catch (error) {
       console.error('Failed to load exam configs from storage:', error);
@@ -52,7 +53,17 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
   // 保存配置到localStorage
   const saveConfigsToStorage = useCallback((configs: ExamConfigType[]) => {
     try {
-      localStorage.setItem('examConfigs', JSON.stringify(configs));
+      // 计算总分
+      const totalQuestions = configs.reduce((sum, config) => sum + config.count, 0);
+      const totalScore = configs.reduce((sum, config) => sum + (config.count * config.score), 0);
+      
+      const examSettings = {
+        configs,
+        totalQuestions,
+        totalScore
+      };
+      
+      localStorage.setItem('examSettings', JSON.stringify(examSettings));
     } catch (error) {
       console.error('Failed to save exam configs to storage:', error);
     }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeToggle } from './components/ThemeToggle';
 import { FileUpload } from './components/FileUpload';
 import { HeaderMapping } from './components/HeaderMapping';
@@ -44,6 +44,32 @@ export default function App() {
     globalMapping: {},
     useGlobalMapping: false
   });
+
+  // 从localStorage加载考试配置
+  useEffect(() => {
+    try {
+      const savedExamSettings = localStorage.getItem('examSettings');
+      if (savedExamSettings) {
+        const parsedSettings = JSON.parse(savedExamSettings);
+        // 确保数据格式正确
+        if (parsedSettings && parsedSettings.configs) {
+          setExamSettings(parsedSettings);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load exam settings from storage:', error);
+    }
+  }, []);
+
+  // 保存考试配置到localStorage
+  const handleExamSettingsChange = (settings: ExamSettings) => {
+    setExamSettings(settings);
+    try {
+      localStorage.setItem('examSettings', JSON.stringify(settings));
+    } catch (error) {
+      console.error('Failed to save exam settings to storage:', error);
+    }
+  };
 
   const handleFileLoaded = (workbook: any) => {
     setWorkbook(workbook);
@@ -354,7 +380,7 @@ export default function App() {
                   settings={settings}
                   onSettingsChange={setSettings}
                   questionTypes={questions.map(q => q.type)}
-                  onExamSettingsChange={setExamSettings}
+                  onExamSettingsChange={handleExamSettingsChange}
                   totalQuestions={questions.length}
                   selectedSheets={multiSheetConfig.sheets.filter(sheet => sheet.isSelected)}
                   questions={questions}
