@@ -1,5 +1,6 @@
 import { HeaderMapping as HeaderMappingType } from '../types';
 import { Globe, Settings } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface HeaderMappingProps {
   headers: string[];
@@ -8,6 +9,7 @@ interface HeaderMappingProps {
   isGlobalMapping?: boolean;
   onGlobalMappingToggle?: () => void;
   sheetName?: string;
+  onMappingStatusChange?: (status: any) => void; // 新增：回调函数，用于向父组件传递映射状态
 }
 
 const MAPPING_CONFIG = {
@@ -29,11 +31,59 @@ export const HeaderMapping = ({
   onMappingChange,
   isGlobalMapping = false,
   onGlobalMappingToggle,
-  sheetName
+  sheetName,
+  onMappingStatusChange
 }: HeaderMappingProps) => {
   const handleChange = (key: keyof HeaderMappingType, value: string) => {
     onMappingChange({ ...mapping, [key]: value });
   };
+
+  // 验证表头映射配置的有效性
+  const getMappingStatus = () => {
+    if (isGlobalMapping) {
+      return {
+        status: 'info',
+        message: '使用全局映射',
+        description: '当前使用全局表头映射配置',
+        color: 'info',
+        sheetName: sheetName
+      };
+    }
+
+    // 检查必填字段是否已映射
+    const requiredFields = Object.entries(MAPPING_CONFIG)
+      .filter(([_, config]) => config.required)
+      .map(([key]) => key);
+
+    const missingFields = requiredFields.filter(field => !mapping[field as keyof HeaderMappingType]);
+
+    if (missingFields.length > 0) {
+      const missingLabels = missingFields.map(field => MAPPING_CONFIG[field as keyof typeof MAPPING_CONFIG].label);
+      return {
+        status: 'error',
+        message: '映射不完整',
+        description: `缺少必填字段：${missingLabels.join('、')}`,
+        color: 'danger',
+        sheetName: sheetName,
+        missingFields: missingFields
+      };
+    }
+
+    return {
+      status: 'success',
+      message: '映射有效',
+      description: '所有必填字段已正确映射',
+      color: 'success',
+      sheetName: sheetName
+    };
+  };
+
+  const mappingStatus = getMappingStatus();
+
+  // 使用useEffect来处理状态回调，避免无限循环
+  useEffect(() => {
+    onMappingStatusChange?.(mappingStatus);
+  }, [mappingStatus, onMappingStatusChange]);
 
   return (
     <div className="space-y-4">
@@ -103,6 +153,39 @@ export const HeaderMapping = ({
             </select>
           </div>
         ))}
+      </div>
+      
+      {/* 映射状态显示 */}
+      <div className={`p-3 rounded-lg border ${
+        mappingStatus.status === 'success'
+          ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-800'
+          : mappingStatus.status === 'error'
+            ? 'bg-danger-50 dark:bg-danger-900/20 border-danger-200 dark:border-danger-800'
+            : 'bg-info-50 dark:bg-info-900/20 border-info-200 dark:border-info-800'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${
+              mappingStatus.status === 'success'
+                ? 'bg-success-500'
+                : mappingStatus.status === 'error'
+                  ? 'bg-danger-500'
+                  : 'bg-info-500'
+            }`}></div>
+            <span className={`text-sm font-medium ${
+              mappingStatus.status === 'success'
+                ? 'text-success-700 dark:text-success-300'
+                : mappingStatus.status === 'error'
+                  ? 'text-danger-700 dark:text-danger-300'
+                  : 'text-info-700 dark:text-info-300'
+            }`}>
+              {mappingStatus.message}
+            </span>
+          </div>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {mappingStatus.description}
+          </span>
+        </div>
       </div>
       
       {isGlobalMapping && (

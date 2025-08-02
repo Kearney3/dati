@@ -92,11 +92,51 @@ export const QuizScreen = ({
 
   // Keyboard shortcuts
   useEffect(() => {
+    // 键盘映射配置
+    const keyMappings = [
+      { keys: ['a', 'A', '1'], letter: 'A', minOptions: 1 },
+      { keys: ['b', 'B', '2'], letter: 'B', minOptions: 2 },
+      { keys: ['c', 'C', '3'], letter: 'C', minOptions: 3 },
+      { keys: ['d', 'D', '4'], letter: 'D', minOptions: 4 },
+      { keys: ['e', 'E', '5'], letter: 'E', minOptions: 5 },
+      { keys: ['f', 'F', '6'], letter: 'F', minOptions: 6 }
+    ];
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Allow navigation shortcuts in recite mode, but disable answer selection
       if (settings.mode === 'recite' && ['a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E', 'f', 'F', '1', '2', '3', '4', '5', '6'].includes(e.key)) {
         return;
       }
+
+      // 处理选项选择的辅助函数
+      const handleOptionSelection = (letter: string) => {
+        if (currentQuestion.type === '多选题') {
+          // 多选题：切换选项状态
+          const currentAnswerStr = currentAnswer || '';
+          const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+          
+          if (currentAnswers.includes(letter)) {
+            // 如果已选中，则移除
+            const index = currentAnswers.indexOf(letter);
+            currentAnswers.splice(index, 1);
+          } else {
+            // 如果未选中，则添加
+            currentAnswers.push(letter);
+          }
+          
+          const newAnswer = currentAnswers.sort().join('');
+          handleAnswerChange(newAnswer || null);
+        } else {
+          // 单选题和判断题：直接设置答案
+          handleAnswerChange(letter);
+        }
+      };
+
+      // 验证选项是否可用的辅助函数
+      const isValidOption = (minOptions: number) => {
+        return currentQuestion.type !== '填空题' && 
+               (currentQuestion.type === '判断题' || currentQuestion.options.length >= minOptions);
+      };
 
       switch (e.key) {
         case 'ArrowLeft':
@@ -117,162 +157,11 @@ export const QuizScreen = ({
             }
           }
           break;
-        case 'a':
-        case 'A':
-        case '1':
-          if (currentQuestion.type !== '填空题' && 
-              (currentQuestion.type === '判断题' || currentQuestion.options.length >= 1)) {
-            if (currentQuestion.type === '多选题') {
-              // 多选题：切换选项状态
-              const currentAnswerStr = currentAnswer || '';
-              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
-              const letter = 'A';
-              
-              if (currentAnswers.includes(letter)) {
-                // 如果已选中，则移除
-                const index = currentAnswers.indexOf(letter);
-                currentAnswers.splice(index, 1);
-              } else {
-                // 如果未选中，则添加
-                currentAnswers.push(letter);
-              }
-              
-              const newAnswer = currentAnswers.sort().join('');
-              handleAnswerChange(newAnswer || null);
-            } else {
-              handleAnswerChange('A');
-            }
-          }
-          break;
-        case 'b':
-        case 'B':
-        case '2':
-          if (currentQuestion.type !== '填空题' && 
-              (currentQuestion.type === '判断题' || currentQuestion.options.length >= 2)) {
-            if (currentQuestion.type === '多选题') {
-              // 多选题：切换选项状态
-              const currentAnswerStr = currentAnswer || '';
-              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
-              const letter = 'B';
-              
-              if (currentAnswers.includes(letter)) {
-                // 如果已选中，则移除
-                const index = currentAnswers.indexOf(letter);
-                currentAnswers.splice(index, 1);
-              } else {
-                // 如果未选中，则添加
-                currentAnswers.push(letter);
-              }
-              
-              const newAnswer = currentAnswers.sort().join('');
-              handleAnswerChange(newAnswer || null);
-            } else {
-              handleAnswerChange('B');
-            }
-          }
-          break;
-        case 'c':
-        case 'C':
-        case '3':
-          if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 3) {
-            if (currentQuestion.type === '多选题') {
-              // 多选题：切换选项状态
-              const currentAnswerStr = currentAnswer || '';
-              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
-              const letter = 'C';
-              
-              if (currentAnswers.includes(letter)) {
-                // 如果已选中，则移除
-                const index = currentAnswers.indexOf(letter);
-                currentAnswers.splice(index, 1);
-              } else {
-                // 如果未选中，则添加
-                currentAnswers.push(letter);
-              }
-              
-              const newAnswer = currentAnswers.sort().join('');
-              handleAnswerChange(newAnswer || null);
-            } else {
-              handleAnswerChange('C');
-            }
-          }
-          break;
-        case 'd':
-        case 'D':
-        case '4':
-          if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 4) {
-            if (currentQuestion.type === '多选题') {
-              // 多选题：切换选项状态
-              const currentAnswerStr = currentAnswer || '';
-              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
-              const letter = 'D';
-              
-              if (currentAnswers.includes(letter)) {
-                // 如果已选中，则移除
-                const index = currentAnswers.indexOf(letter);
-                currentAnswers.splice(index, 1);
-              } else {
-                // 如果未选中，则添加
-                currentAnswers.push(letter);
-              }
-              
-              const newAnswer = currentAnswers.sort().join('');
-              handleAnswerChange(newAnswer || null);
-            } else {
-              handleAnswerChange('D');
-            }
-          }
-          break;
-        case 'e':
-        case 'E':
-        case '5':
-          if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 5) {
-            if (currentQuestion.type === '多选题') {
-              // 多选题：切换选项状态
-              const currentAnswerStr = currentAnswer || '';
-              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
-              const letter = 'E';
-              
-              if (currentAnswers.includes(letter)) {
-                // 如果已选中，则移除
-                const index = currentAnswers.indexOf(letter);
-                currentAnswers.splice(index, 1);
-              } else {
-                // 如果未选中，则添加
-                currentAnswers.push(letter);
-              }
-              
-              const newAnswer = currentAnswers.sort().join('');
-              handleAnswerChange(newAnswer || null);
-            } else {
-              handleAnswerChange('E');
-            }
-          }
-          break;
-        case 'f':
-        case 'F':
-        case '6':
-          if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 6) {
-            if (currentQuestion.type === '多选题') {
-              // 多选题：切换选项状态
-              const currentAnswerStr = currentAnswer || '';
-              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
-              const letter = 'F';
-              
-              if (currentAnswers.includes(letter)) {
-                // 如果已选中，则移除
-                const index = currentAnswers.indexOf(letter);
-                currentAnswers.splice(index, 1);
-              } else {
-                // 如果未选中，则添加
-                currentAnswers.push(letter);
-              }
-              
-              const newAnswer = currentAnswers.sort().join('');
-              handleAnswerChange(newAnswer || null);
-            } else {
-              handleAnswerChange('F');
-            }
+        default:
+          // 处理选项键
+          const mapping = keyMappings.find(m => m.keys.includes(e.key));
+          if (mapping && isValidOption(mapping.minOptions)) {
+            handleOptionSelection(mapping.letter);
           }
           break;
       }

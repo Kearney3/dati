@@ -215,12 +215,60 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
     }
   }, [examDragState, configs]);
 
-  const validateConfig = (config: ExamConfigType) => {
-    return config.count >= 0 && config.score >= 0;
+  // 优化配置验证逻辑
+  const getConfigStatus = () => {
+    const totalConfiguredQuestions = configs.reduce((sum, config) => sum + config.count, 0);
+    const totalAvailableQuestions = totalQuestions;
+    const hasInvalidConfigs = configs.some(config => config.count < 0 || config.score < 0);
+    const hasZeroScores = configs.some(config => config.count > 0 && config.score === 0);
+    const hasQuestions = totalConfiguredQuestions > 0;
+    const exceedsAvailable = totalConfiguredQuestions > totalAvailableQuestions;
+
+    if (hasInvalidConfigs) {
+      return {
+        status: 'error',
+        message: '配置有误',
+        description: '存在无效的题目数量或分值设置',
+        color: 'danger'
+      };
+    }
+
+    if (hasZeroScores) {
+      return {
+        status: 'warning',
+        message: '分值设置',
+        description: '有题目数量但分值为0，请检查分值设置',
+        color: 'warning'
+      };
+    }
+
+    if (!hasQuestions) {
+      return {
+        status: 'info',
+        message: '请设置题目',
+        description: '请为至少一种题型设置题目数量',
+        color: 'info'
+      };
+    }
+
+    if (exceedsAvailable) {
+      return {
+        status: 'warning',
+        message: '题目超限',
+        description: `配置题目数(${totalConfiguredQuestions})超过可用题目数(${totalAvailableQuestions})`,
+        color: 'warning'
+      };
+    }
+
+    return {
+      status: 'success',
+      message: '配置有效',
+      description: `已配置 ${totalConfiguredQuestions} 题，满分 ${configs.reduce((sum, config) => sum + (config.count * config.score), 0)} 分`,
+      color: 'success'
+    };
   };
 
-  const isValid = configs.every(validateConfig);
-  const hasQuestions = configs.some(config => config.count > 0);
+  const configStatus = getConfigStatus();
 
   return (
     <div className="space-y-6">
@@ -487,21 +535,37 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
       </div>
       
       <div className="card p-4 bg-blue-50 dark:bg-blue-900/20">
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
             <p className="font-medium text-gray-900 dark:text-white">
               总计: {configs.reduce((sum, config) => sum + config.count, 0)} 题
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               满分: {configs.reduce((sum, config) => sum + (config.count * config.score), 0)} 分
             </p>
+            {configStatus.status !== 'success' && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {configStatus.description}
+              </p>
+            )}
           </div>
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-            isValid && hasQuestions
-              ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-200'
-              : 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-200'
-          }`}>
-            {isValid && hasQuestions ? '配置有效' : hasQuestions ? '请检查配置' : '请设置题目数量'}
+          <div className="flex flex-col items-end">
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+              configStatus.status === 'success'
+                ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-200'
+                : configStatus.status === 'warning'
+                  ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-200'
+                  : configStatus.status === 'error'
+                    ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-200'
+                    : 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-200'
+            }`}>
+              {configStatus.message}
+            </div>
+            {configStatus.status === 'success' && (
+              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {configStatus.description}
+              </div>
+            )}
           </div>
         </div>
       </div>

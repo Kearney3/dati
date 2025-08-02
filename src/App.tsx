@@ -45,6 +45,9 @@ export default function App() {
     useGlobalMapping: false
   });
 
+  // 新增：映射状态管理
+  const [mappingStatuses, setMappingStatuses] = useState<{[sheetName: string]: any}>({});
+
   // 从localStorage加载考试配置
   useEffect(() => {
     try {
@@ -164,6 +167,7 @@ export default function App() {
 
   const handleGlobalMappingToggle = () => {
     const newUseGlobalMapping = !multiSheetConfig.useGlobalMapping;
+    
     setMultiSheetConfig(prev => ({
       ...prev,
       useGlobalMapping: newUseGlobalMapping
@@ -173,12 +177,21 @@ export default function App() {
     if (newUseGlobalMapping) {
       setMapping(multiSheetConfig.globalMapping);
     } else {
+      // 切换到独立映射时，使用第一个选中工作表的映射
       const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
       if (selectedSheets.length > 0) {
         const firstSheet = selectedSheets.find(sheet => !sheet.useGlobalMapping) || selectedSheets[0];
         setMapping(firstSheet.mapping);
       }
     }
+  };
+
+  // 新增：处理映射状态变化
+  const handleMappingStatusChange = (sheetName: string, status: any) => {
+    setMappingStatuses(prev => ({
+      ...prev,
+      [sheetName]: status
+    }));
   };
 
   const handleStartQuiz = () => {
@@ -341,13 +354,26 @@ export default function App() {
 
         {currentScreen === 'config' && (
           <div className="max-w-4xl mx-auto space-y-8">
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                配置题库
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                选择工作表并配置表头映射
-              </p>
+            {/* 返回首页按钮 */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={handleBackToUpload}
+                className="btn btn-secondary flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                返回首页
+              </button>
+              <div className="text-center flex-1">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  配置题库
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  选择工作表并配置表头映射
+                </p>
+              </div>
+              <div className="w-24"></div> {/* 占位，保持标题居中 */}
             </div>
 
             {/* 工作表选择 */}
@@ -357,6 +383,7 @@ export default function App() {
                 multiSheetConfig={multiSheetConfig}
                 onMultiSheetConfigChange={handleMultiSheetConfigChange}
                 workbook={workbook}
+                mappingStatuses={mappingStatuses}
               />
             </div>
 
@@ -369,6 +396,13 @@ export default function App() {
                   onMappingChange={handleMappingChange}
                   isGlobalMapping={multiSheetConfig.useGlobalMapping}
                   onGlobalMappingToggle={handleGlobalMappingToggle}
+                  sheetName={multiSheetConfig.useGlobalMapping ? '全局映射' : multiSheetConfig.sheets.find(s => s.isSelected && !s.useGlobalMapping)?.sheetName}
+                  onMappingStatusChange={(status) => {
+                    const sheetName = multiSheetConfig.useGlobalMapping ? 'global' : multiSheetConfig.sheets.find(s => s.isSelected && !s.useGlobalMapping)?.sheetName;
+                    if (sheetName) {
+                      handleMappingStatusChange(sheetName, status);
+                    }
+                  }}
                 />
               </div>
             )}

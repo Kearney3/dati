@@ -8,6 +8,7 @@ interface SheetSelectorProps {
   multiSheetConfig: MultiSheetConfig;
   onMultiSheetConfigChange: (config: MultiSheetConfig) => void;
   workbook?: any;
+  mappingStatuses?: {[sheetName: string]: any}; // 新增：映射状态
 }
 
 interface SheetMappingModalProps {
@@ -104,7 +105,8 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
 export const SheetSelector = ({
   multiSheetConfig,
   onMultiSheetConfigChange,
-  workbook
+  workbook,
+  mappingStatuses = {}
 }: SheetSelectorProps) => {
   const [selectedSheetForMapping, setSelectedSheetForMapping] = useState<SheetConfig | null>(null);
   const [sheetHeaders, setSheetHeaders] = useState<string[]>([]);
@@ -326,12 +328,52 @@ export const SheetSelector = ({
                   .reduce((sum, sheet) => sum + sheet.questionCount, 0)} 题
               </p>
             </div>
-            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              selectedCount > 0 
-                ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-200'
-                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-            }`}>
-              {selectedCount > 0 ? '配置有效' : '请选择工作表'}
+            <div className="flex flex-col items-end">
+              {/* 映射状态显示 */}
+              {(() => {
+                const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
+                const hasMappingErrors = selectedSheets.some(sheet => {
+                  const status = mappingStatuses[sheet.sheetName];
+                  return status && status.status === 'error';
+                });
+
+                if (selectedCount === 0) {
+                  return (
+                    <div className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                      请选择工作表
+                    </div>
+                  );
+                }
+
+                if (hasMappingErrors) {
+                  const errorSheets = selectedSheets.filter(sheet => {
+                    const status = mappingStatuses[sheet.sheetName];
+                    return status && status.status === 'error';
+                  });
+
+                  return (
+                    <div className="flex flex-col items-end">
+                      <div className="px-3 py-1 rounded-full text-sm font-medium bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-200">
+                        配置有误
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {errorSheets.map(sheet => sheet.sheetName).join('、')} 映射不完整
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="flex flex-col items-end">
+                    <div className="px-3 py-1 rounded-full text-sm font-medium bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-200">
+                      配置有效
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {multiSheetConfig.useGlobalMapping ? '使用全局映射' : '使用独立映射'}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
