@@ -93,18 +93,50 @@ export const processQuestions = (data: any[], mapping: HeaderMapping): Question[
 };
 
 export const normalizeQuestionType = (type: string): Question['type'] => {
-  const typeMap: Record<string, Question['type']> = {
-    '单选': '单选题',
-    '单选题': '单选题',
-    '多选': '多选题',
-    '多选题': '多选题',
-    '判断': '判断题',
-    '判断题': '判断题',
-    '填空': '填空题',
-    '填空题': '填空题'
-  };
+  if (!type) return '单选题';
   
-  return typeMap[type] || '单选题';
+  const normalizedType = type.trim().toLowerCase();
+  
+  // 单选题匹配模式
+  if (normalizedType.includes('单选') || 
+      normalizedType.includes('单选题') || 
+      normalizedType.includes('single') ||
+      normalizedType.includes('选择') ||
+      normalizedType.includes('单项选择题') ||
+      normalizedType.includes('选择题')) {
+    return '单选题';
+  }
+  
+  // 多选题匹配模式
+  if (normalizedType.includes('多选') || 
+      normalizedType.includes('多选题') || 
+      normalizedType.includes('multiple') ||
+      normalizedType.includes('多项选择') ||
+      normalizedType.includes('多项')) {
+    return '多选题';
+  }
+  
+  // 判断题匹配模式
+  if (normalizedType.includes('判断') || 
+      normalizedType.includes('判断题') || 
+      normalizedType.includes('judge') ||
+      normalizedType.includes('对错') ||
+      normalizedType.includes('是非')) {
+    return '判断题';
+  }
+  
+  // 填空题匹配模式
+  if (normalizedType.includes('填空') || 
+      normalizedType.includes('填空题') || 
+      normalizedType.includes('fill') ||
+      normalizedType.includes('填写') ||
+      normalizedType.includes('补充') ||
+      normalizedType.includes('完成') ) {
+    return '填空题';
+  }
+  
+  // 默认返回单选题
+  return '单选题';
 };
 
 export const autoMapHeaders = (headers: string[]): Partial<HeaderMapping> => {

@@ -181,6 +181,25 @@ export default function App() {
       }
     }
 
+    // 检查考试配置
+    if (settings.mode === 'exam' && examSettings) {
+      const totalExamQuestions = examSettings.totalQuestions;
+      if (totalExamQuestions === 0) {
+        alert('考试配置中题目数量为0，请设置题目数量');
+        return;
+      }
+      
+      // 检查每种题型是否都有配置
+      const invalidConfigs = examSettings.configs.filter(config => 
+        config.count > 0 && config.count > questions.filter(q => q.type === config.questionType).length
+      );
+      
+      if (invalidConfigs.length > 0) {
+        alert(`以下题型的配置超出实际题目数量：${invalidConfigs.map(c => c.questionType).join(', ')}`);
+        return;
+      }
+    }
+
     // 使用新的多工作表处理函数
     const allQuestions = processMultiSheetQuestions(workbook, selectedSheets, multiSheetConfig.globalMapping);
     
@@ -311,6 +330,7 @@ export default function App() {
                 sheetNames={sheetNames}
                 multiSheetConfig={multiSheetConfig}
                 onMultiSheetConfigChange={handleMultiSheetConfigChange}
+                workbook={workbook}
               />
             </div>
 
@@ -336,6 +356,8 @@ export default function App() {
                   questionTypes={questions.map(q => q.type)}
                   onExamSettingsChange={setExamSettings}
                   totalQuestions={questions.length}
+                  selectedSheets={multiSheetConfig.sheets.filter(sheet => sheet.isSelected)}
+                  questions={questions}
                 />
               </div>
             )}

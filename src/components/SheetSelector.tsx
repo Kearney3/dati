@@ -1,16 +1,114 @@
-import { MultiSheetConfig } from '../types';
-import { Check, Settings, Globe, FileText } from 'lucide-react';
+import { MultiSheetConfig, SheetConfig, HeaderMapping } from '../types';
+import { Check, Settings, Globe, FileText, X } from 'lucide-react';
+import { useState } from 'react';
+import { getSheetData } from '../utils/excel';
 
 interface SheetSelectorProps {
   sheetNames: string[];
   multiSheetConfig: MultiSheetConfig;
   onMultiSheetConfigChange: (config: MultiSheetConfig) => void;
+  workbook?: any;
 }
+
+interface SheetMappingModalProps {
+  sheet: SheetConfig;
+  headers: string[];
+  onClose: () => void;
+  onSave: (sheetName: string, mapping: Partial<HeaderMapping>) => void;
+}
+
+const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModalProps) => {
+  const [mapping, setMapping] = useState<Partial<HeaderMapping>>(sheet.mapping);
+
+  const handleSave = () => {
+    onSave(sheet.sheetName, mapping);
+    onClose();
+  };
+
+  const MAPPING_CONFIG = {
+    question: { label: '题干', required: true },
+    type: { label: '题型', required: true },
+    answer: { label: '答案', required: true },
+    optionA: { label: '选项A', required: false },
+    optionB: { label: '选项B', required: false },
+    optionC: { label: '选项C', required: false },
+    optionD: { label: '选项D', required: false },
+    optionE: { label: '选项E', required: false },
+    optionF: { label: '选项F', required: false },
+    explanation: { label: '解析', required: false },
+  } as const;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            配置表头映射 - {sheet.sheetName}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            为 {sheet.sheetName} 工作表配置独立的表头映射
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Object.entries(MAPPING_CONFIG).map(([key, config]) => (
+              <div key={key} className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {config.label}
+                  {config.required && <span className="text-danger-500 ml-1">*</span>}
+                </label>
+                <select
+                  value={mapping[key as keyof HeaderMapping] || ''}
+                  onChange={(e) => setMapping({ ...mapping, [key]: e.target.value })}
+                  className="input"
+                >
+                  <option value="">-- 请选择 --</option>
+                  {headers.map((header) => (
+                    <option key={header} value={header}>
+                      {header}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <button
+              onClick={onClose}
+              className="btn btn-secondary"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleSave}
+              className="btn btn-primary"
+            >
+              保存
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const SheetSelector = ({
   multiSheetConfig,
-  onMultiSheetConfigChange
+  onMultiSheetConfigChange,
+  workbook
 }: SheetSelectorProps) => {
+  const [selectedSheetForMapping, setSelectedSheetForMapping] = useState<SheetConfig | null>(null);
+  const [sheetHeaders, setSheetHeaders] = useState<string[]>([]);
+
   const handleSelectAll = () => {
     const newSheets = multiSheetConfig.sheets.map(sheet => ({
       ...sheet,
@@ -56,6 +154,26 @@ export const SheetSelector = ({
     const newSheets = multiSheetConfig.sheets.map(sheet => 
       sheet.sheetName === sheetName 
         ? { ...sheet, useGlobalMapping: !sheet.useGlobalMapping }
+        : sheet
+    );
+    onMultiSheetConfigChange({
+      ...multiSheetConfig,
+      sheets: newSheets
+    });
+  };
+
+  const handleOpenMappingModal = (sheet: SheetConfig) => {
+    if (workbook) {
+      const { headers } = getSheetData(workbook, sheet.sheetName);
+      setSheetHeaders(headers || []);
+      setSelectedSheetForMapping(sheet);
+    }
+  };
+
+  const handleSaveSheetMapping = (sheetName: string, mapping: Partial<HeaderMapping>) => {
+    const newSheets = multiSheetConfig.sheets.map(sheet => 
+      sheet.sheetName === sheetName 
+        ? { ...sheet, mapping }
         : sheet
     );
     onMultiSheetConfigChange({
@@ -167,10 +285,7 @@ export const SheetSelector = ({
                       )}
                       
                       <button
-                        onClick={() => {
-                          // 这里可以打开单独的表头映射配置
-                          console.log('配置表头映射:', sheet.sheetName);
-                        }}
+                        onClick={() => handleOpenMappingModal(sheet)}
                         className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         title="配置表头映射"
                       >
@@ -221,6 +336,16 @@ export const SheetSelector = ({
           </div>
         </div>
       </div>
+
+      {/* 表头映射配置模态框 */}
+      {selectedSheetForMapping && (
+        <SheetMappingModal
+          sheet={selectedSheetForMapping}
+          headers={sheetHeaders}
+          onClose={() => setSelectedSheetForMapping(null)}
+          onSave={handleSaveSheetMapping}
+        />
+      )}
     </div>
   );
 }; 

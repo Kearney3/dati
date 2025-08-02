@@ -8,6 +8,8 @@ interface QuizSettingsProps {
   questionTypes?: string[];
   onExamSettingsChange?: (settings: ExamSettings) => void;
   totalQuestions?: number;
+  selectedSheets?: any[]; // 新增：选中的工作表信息
+  questions?: any[]; // 新增：实际的题目数据
 }
 
 export const QuizSettings = ({ 
@@ -15,7 +17,9 @@ export const QuizSettings = ({
   onSettingsChange,
   questionTypes = [],
   onExamSettingsChange,
-  totalQuestions = 0
+  totalQuestions = 0,
+  selectedSheets = [],
+  questions = []
 }: QuizSettingsProps) => {
   const [dragState, setDragState] = useState<{
     isDragging: boolean;
@@ -463,6 +467,9 @@ export const QuizSettings = ({
           <ExamConfig 
             questionTypes={questionTypes}
             onConfigChange={onExamSettingsChange}
+            totalQuestions={totalQuestions}
+            selectedSheets={selectedSheets}
+            questions={questions}
           />
         </div>
       )}

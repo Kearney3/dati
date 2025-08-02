@@ -101,14 +101,20 @@ export const QuizScreen = ({
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
-          handlePrev();
+          // 填空题时禁用左右换题功能
+          if (currentQuestion.type !== '填空题') {
+            handlePrev();
+          }
           break;
         case 'ArrowRight':
           e.preventDefault();
-          if (quizState.currentQuestionIndex < questions.length - 1) {
-            handleNext();
-          } else {
-            handleSubmit();
+          // 填空题时禁用左右换题功能
+          if (currentQuestion.type !== '填空题') {
+            if (quizState.currentQuestionIndex < questions.length - 1) {
+              handleNext();
+            } else {
+              handleSubmit();
+            }
           }
           break;
         case 'a':
@@ -231,7 +237,10 @@ export const QuizScreen = ({
                 : currentQuestion.options
               ).map((option, index) => {
                 const letter = String.fromCharCode(65 + index);
-                const isSelected = currentAnswer === letter;
+                // 修复多选题的选中状态判断
+                const isSelected = currentQuestion.type === '多选题' 
+                  ? (currentAnswer && currentAnswer.includes(letter))
+                  : currentAnswer === letter;
                 const isCorrectAnswer = currentQuestion.answer.includes(letter);
                 
                 return (
@@ -249,7 +258,7 @@ export const QuizScreen = ({
                       type={currentQuestion.type === '多选题' ? 'checkbox' : 'radio'}
                       name={`question-${quizState.currentQuestionIndex}`}
                       value={letter}
-                      checked={isSelected}
+                      checked={isSelected || false}
                       onChange={(e) => {
                         if (currentQuestion.type === '多选题') {
                           const currentAnswers = currentAnswer ? currentAnswer.split('') : [];
@@ -267,12 +276,24 @@ export const QuizScreen = ({
                       className="sr-only"
                       disabled={settings.mode === 'recite'}
                     />
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 mr-3 flex items-center justify-center">
+                    <span className={`flex-shrink-0 w-6 h-6 border-2 mr-3 flex items-center justify-center ${
+                      currentQuestion.type === '多选题' 
+                        ? 'rounded border-gray-300 dark:border-gray-600' 
+                        : 'rounded-full border-gray-300 dark:border-gray-600'
+                    }`}>
                       {isSelected && (
-                        <div className="w-3 h-3 rounded-full bg-primary-600" />
+                        currentQuestion.type === '多选题' ? (
+                          <div className="w-3 h-3 bg-primary-600 rounded-sm" />
+                        ) : (
+                          <div className="w-3 h-3 rounded-full bg-primary-600" />
+                        )
                       )}
                       {isCorrectAnswer && settings.mode === 'recite' && !isSelected && (
-                        <div className="w-3 h-3 rounded-full bg-success-600" />
+                        currentQuestion.type === '多选题' ? (
+                          <div className="w-3 h-3 bg-success-600 rounded-sm" />
+                        ) : (
+                          <div className="w-3 h-3 rounded-full bg-success-600" />
+                        )
                       )}
                     </span>
                     <span className="text-gray-900 dark:text-white">
