@@ -1,0 +1,38 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#3B82F6" stroke="#1E40AF" stroke-width="8"/>
+  
+  <!-- Quiz/Test icon elements -->
+  <!-- Document base -->
+  <rect x="140" y="120" width="232" height="280" rx="16" fill="white" stroke="#1E40AF" stroke-width="4"/>
+  
+  <!-- Document lines representing text/questions -->
+  <rect x="160" y="160" width="120" height="8" rx="4" fill="#6B7280"/>
+  <rect x="160" y="180" width="140" height="8" rx="4" fill="#6B7280"/>
+  <rect x="160" y="200" width="100" height="8" rx="4" fill="#6B7280"/>
+  
+  <!-- Question mark -->
+  <circle cx="320" cy="180" r="20" fill="#3B82F6"/>
+  <text x="320" y="188" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="white">?</text>
+  
+  <!-- Multiple choice options -->
+  <circle cx="180" cy="240" r="8" fill="#10B981"/>
+  <rect x="200" y="232" width="80" height="8" rx="4" fill="#6B7280"/>
+  
+  <circle cx="180" cy="260" r="8" fill="#EF4444"/>
+  <rect x="200" y="252" width="90" height="8" rx="4" fill="#6B7280"/>
+  
+  <circle cx="180" cy="280" r="8" fill="#F59E0B"/>
+  <rect x="200" y="272" width="70" height="8" rx="4" fill="#6B7280"/>
+  
+  <circle cx="180" cy="300" r="8" fill="#8B5CF6"/>
+  <rect x="200" y="292" width="85" height="8" rx="4" fill="#6B7280"/>
+  
+  <!-- Progress indicator -->
+  <rect x="160" y="340" width="192" height="12" rx="6" fill="#E5E7EB"/>
+  <rect x="160" y="340" width="96" height="12" rx="6" fill="#3B82F6"/>
+  
+  <!-- Checkmark for completed -->
+  <circle cx="380" cy="200" r="16" fill="#10B981"/>
+  <path d="M374 200 L378 204 L388 194" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg> 
