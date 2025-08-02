@@ -102,7 +102,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
       }));
       setConfigs(initialConfigs);
     }
-  }, [selectedSheetsInfo.count, getQuestionTypeCount]); // 只依赖选中工作表数量和题目类型统计
+  }, [selectedSheetsInfo.count]); // 只依赖选中工作表数量，移除getQuestionTypeCount依赖
 
   useEffect(() => {
     // Calculate totals and notify parent

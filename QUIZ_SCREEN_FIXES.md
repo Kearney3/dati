@@ -89,14 +89,17 @@ export const getExamStats = (results: QuestionResult[], examSettings: ExamSettin
 
 **问题描述**：考试配置的设置无法持久化保存，每次刷新页面后配置会丢失。
 
-**根本原因**：ExamConfig组件和App组件使用了不同的localStorage键，导致数据不一致：
-- ExamConfig组件使用 `'examConfigs'` 键
-- App组件使用 `'examSettings'` 键
+**根本原因**：
+1. ExamConfig组件和App组件使用了不同的localStorage键，导致数据不一致：
+   - ExamConfig组件使用 `'examConfigs'` 键
+   - App组件使用 `'examSettings'` 键
+2. ExamConfig组件的useEffect依赖项包含了`getQuestionTypeCount`，导致每次questions变化时都重新初始化配置，覆盖了保存的数据
 
 **修复方案**：
 - 统一使用 `'examSettings'` 键存储完整的考试配置数据
 - 修改ExamConfig组件的保存逻辑，保存完整的ExamSettings对象
 - 修改App组件的加载逻辑，确保数据格式正确
+- 移除ExamConfig组件useEffect中对`getQuestionTypeCount`的依赖，避免不必要的重新初始化
 
 **代码位置**：`src/components/ExamConfig.tsx` 和 `src/App.tsx`
 
@@ -134,6 +137,11 @@ const saveConfigsToStorage = useCallback((configs: ExamConfigType[]) => {
     console.error('Failed to save exam configs to storage:', error);
   }
 }, []);
+
+// 修复useEffect依赖项
+useEffect(() => {
+  // ... 初始化逻辑 ...
+}, [selectedSheetsInfo.count]); // 只依赖选中工作表数量，移除getQuestionTypeCount依赖
 ```
 
 **App.tsx 修改**：
@@ -154,6 +162,107 @@ useEffect(() => {
   }
 }, []);
 ```
+
+### 5. 多选题无法多选（进一步修复）
+
+**问题描述**：多选题的选项无法正确选中，选中状态判断逻辑有误。
+
+**根本原因**：
+- 多选题答案处理逻辑不够健壮，没有正确处理空值和无效字符
+- 缺少对重复选项的检查
+
+**修复方案**：
+- 改进了多选题答案的处理逻辑
+- 添加了对空值和无效字符的过滤
+- 添加了重复选项检查
+- 确保答案格式的一致性
+
+**代码位置**：`src/components/QuizScreen.tsx`
+
+**多选题答案处理优化**：
+```typescript
+onChange={(e) => {
+  if (currentQuestion.type === '多选题') {
+    // 确保currentAnswer是字符串
+    const currentAnswerStr = currentAnswer || '';
+    const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+    
+    if (e.target.checked) {
+      if (!currentAnswers.includes(letter)) {
+        currentAnswers.push(letter);
+      }
+    } else {
+      const index = currentAnswers.indexOf(letter);
+      if (index > -1) currentAnswers.splice(index, 1);
+    }
+    
+    const newAnswer = currentAnswers.sort().join('');
+    handleAnswerChange(newAnswer || null);
+  } else {
+    handleAnswerChange(letter);
+  }
+}}
+```
+
+### 6. 多选题使用快捷键无法多选
+
+**问题描述**：多选题使用键盘快捷键（A、B、C、D等）时无法多选，每次按键都会覆盖之前的选择。
+
+**根本原因**：
+- 键盘快捷键处理逻辑对于多选题和单选题使用相同的处理方式
+- 都是直接调用`handleAnswerChange(letter)`，这会覆盖之前的选择
+- 没有为多选题实现切换选项状态的逻辑
+
+**修复方案**：
+- 修改键盘快捷键处理逻辑，为多选题添加专门的切换逻辑
+- 对于多选题，检查选项是否已选中，如果已选中则移除，如果未选中则添加
+- 保持单选题和判断题的原有逻辑不变
+
+**代码位置**：`src/components/QuizScreen.tsx`
+
+**键盘快捷键处理优化**：
+```typescript
+case 'a':
+case 'A':
+case '1':
+  if (currentQuestion.type !== '填空题' && 
+      (currentQuestion.type === '判断题' || currentQuestion.options.length >= 1)) {
+    if (currentQuestion.type === '多选题') {
+      // 多选题：切换选项状态
+      const currentAnswerStr = currentAnswer || '';
+      const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+      const letter = 'A';
+      
+      if (currentAnswers.includes(letter)) {
+        // 如果已选中，则移除
+        const index = currentAnswers.indexOf(letter);
+        currentAnswers.splice(index, 1);
+      } else {
+        // 如果未选中，则添加
+        currentAnswers.push(letter);
+      }
+      
+      const newAnswer = currentAnswers.sort().join('');
+      handleAnswerChange(newAnswer || null);
+    } else {
+      handleAnswerChange('A');
+    }
+  }
+  break;
+```
+
+**技术细节**：
+- 使用相同的逻辑处理所有选项（A-F）
+- 确保答案格式的一致性（按字母顺序排序）
+- 保持与鼠标点击操作的一致性
+- 支持数字键（1-6）和字母键（A-F）的映射
+
+**测试建议**：
+1. 选择多选题
+2. 使用键盘快捷键（A、B、C、D等）选择多个选项
+3. 确认选项可以正确切换（选中/取消选中）
+4. 验证答案格式正确（如"ABC"）
+5. 测试数字键和字母键的映射是否正确
 
 ## 技术细节
 

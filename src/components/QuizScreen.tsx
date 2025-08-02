@@ -122,7 +122,26 @@ export const QuizScreen = ({
         case '1':
           if (currentQuestion.type !== '填空题' && 
               (currentQuestion.type === '判断题' || currentQuestion.options.length >= 1)) {
-            handleAnswerChange('A');
+            if (currentQuestion.type === '多选题') {
+              // 多选题：切换选项状态
+              const currentAnswerStr = currentAnswer || '';
+              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+              const letter = 'A';
+              
+              if (currentAnswers.includes(letter)) {
+                // 如果已选中，则移除
+                const index = currentAnswers.indexOf(letter);
+                currentAnswers.splice(index, 1);
+              } else {
+                // 如果未选中，则添加
+                currentAnswers.push(letter);
+              }
+              
+              const newAnswer = currentAnswers.sort().join('');
+              handleAnswerChange(newAnswer || null);
+            } else {
+              handleAnswerChange('A');
+            }
           }
           break;
         case 'b':
@@ -130,35 +149,130 @@ export const QuizScreen = ({
         case '2':
           if (currentQuestion.type !== '填空题' && 
               (currentQuestion.type === '判断题' || currentQuestion.options.length >= 2)) {
-            handleAnswerChange('B');
+            if (currentQuestion.type === '多选题') {
+              // 多选题：切换选项状态
+              const currentAnswerStr = currentAnswer || '';
+              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+              const letter = 'B';
+              
+              if (currentAnswers.includes(letter)) {
+                // 如果已选中，则移除
+                const index = currentAnswers.indexOf(letter);
+                currentAnswers.splice(index, 1);
+              } else {
+                // 如果未选中，则添加
+                currentAnswers.push(letter);
+              }
+              
+              const newAnswer = currentAnswers.sort().join('');
+              handleAnswerChange(newAnswer || null);
+            } else {
+              handleAnswerChange('B');
+            }
           }
           break;
         case 'c':
         case 'C':
         case '3':
           if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 3) {
-            handleAnswerChange('C');
+            if (currentQuestion.type === '多选题') {
+              // 多选题：切换选项状态
+              const currentAnswerStr = currentAnswer || '';
+              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+              const letter = 'C';
+              
+              if (currentAnswers.includes(letter)) {
+                // 如果已选中，则移除
+                const index = currentAnswers.indexOf(letter);
+                currentAnswers.splice(index, 1);
+              } else {
+                // 如果未选中，则添加
+                currentAnswers.push(letter);
+              }
+              
+              const newAnswer = currentAnswers.sort().join('');
+              handleAnswerChange(newAnswer || null);
+            } else {
+              handleAnswerChange('C');
+            }
           }
           break;
         case 'd':
         case 'D':
         case '4':
           if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 4) {
-            handleAnswerChange('D');
+            if (currentQuestion.type === '多选题') {
+              // 多选题：切换选项状态
+              const currentAnswerStr = currentAnswer || '';
+              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+              const letter = 'D';
+              
+              if (currentAnswers.includes(letter)) {
+                // 如果已选中，则移除
+                const index = currentAnswers.indexOf(letter);
+                currentAnswers.splice(index, 1);
+              } else {
+                // 如果未选中，则添加
+                currentAnswers.push(letter);
+              }
+              
+              const newAnswer = currentAnswers.sort().join('');
+              handleAnswerChange(newAnswer || null);
+            } else {
+              handleAnswerChange('D');
+            }
           }
           break;
         case 'e':
         case 'E':
         case '5':
           if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 5) {
-            handleAnswerChange('E');
+            if (currentQuestion.type === '多选题') {
+              // 多选题：切换选项状态
+              const currentAnswerStr = currentAnswer || '';
+              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+              const letter = 'E';
+              
+              if (currentAnswers.includes(letter)) {
+                // 如果已选中，则移除
+                const index = currentAnswers.indexOf(letter);
+                currentAnswers.splice(index, 1);
+              } else {
+                // 如果未选中，则添加
+                currentAnswers.push(letter);
+              }
+              
+              const newAnswer = currentAnswers.sort().join('');
+              handleAnswerChange(newAnswer || null);
+            } else {
+              handleAnswerChange('E');
+            }
           }
           break;
         case 'f':
         case 'F':
         case '6':
           if (currentQuestion.type !== '填空题' && currentQuestion.options.length >= 6) {
-            handleAnswerChange('F');
+            if (currentQuestion.type === '多选题') {
+              // 多选题：切换选项状态
+              const currentAnswerStr = currentAnswer || '';
+              const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+              const letter = 'F';
+              
+              if (currentAnswers.includes(letter)) {
+                // 如果已选中，则移除
+                const index = currentAnswers.indexOf(letter);
+                currentAnswers.splice(index, 1);
+              } else {
+                // 如果未选中，则添加
+                currentAnswers.push(letter);
+              }
+              
+              const newAnswer = currentAnswers.sort().join('');
+              handleAnswerChange(newAnswer || null);
+            } else {
+              handleAnswerChange('F');
+            }
           }
           break;
       }
@@ -261,14 +375,21 @@ export const QuizScreen = ({
                       checked={isSelected || false}
                       onChange={(e) => {
                         if (currentQuestion.type === '多选题') {
-                          const currentAnswers = currentAnswer ? currentAnswer.split('') : [];
+                          // 确保currentAnswer是字符串
+                          const currentAnswerStr = currentAnswer || '';
+                          const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+                          
                           if (e.target.checked) {
-                            currentAnswers.push(letter);
+                            if (!currentAnswers.includes(letter)) {
+                              currentAnswers.push(letter);
+                            }
                           } else {
                             const index = currentAnswers.indexOf(letter);
                             if (index > -1) currentAnswers.splice(index, 1);
                           }
-                          handleAnswerChange(currentAnswers.sort().join(''));
+                          
+                          const newAnswer = currentAnswers.sort().join('');
+                          handleAnswerChange(newAnswer || null);
                         } else {
                           handleAnswerChange(letter);
                         }
