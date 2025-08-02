@@ -1,0 +1,118 @@
+import { HeaderMapping as HeaderMappingType } from '../types';
+import { Globe, Settings } from 'lucide-react';
+
+interface HeaderMappingProps {
+  headers: string[];
+  mapping: Partial<HeaderMappingType>;
+  onMappingChange: (mapping: Partial<HeaderMappingType>) => void;
+  isGlobalMapping?: boolean;
+  onGlobalMappingToggle?: () => void;
+  sheetName?: string;
+}
+
+const MAPPING_CONFIG = {
+  question: { label: '题干', required: true },
+  type: { label: '题型', required: true },
+  answer: { label: '答案', required: true },
+  optionA: { label: '选项A', required: false },
+  optionB: { label: '选项B', required: false },
+  optionC: { label: '选项C', required: false },
+  optionD: { label: '选项D', required: false },
+  optionE: { label: '选项E', required: false },
+  optionF: { label: '选项F', required: false },
+  explanation: { label: '解析', required: false },
+} as const;
+
+export const HeaderMapping = ({ 
+  headers, 
+  mapping, 
+  onMappingChange,
+  isGlobalMapping = false,
+  onGlobalMappingToggle,
+  sheetName
+}: HeaderMappingProps) => {
+  const handleChange = (key: keyof HeaderMappingType, value: string) => {
+    onMappingChange({ ...mapping, [key]: value });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          表头映射
+          {sheetName && (
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+              ({sheetName})
+            </span>
+          )}
+        </h3>
+        
+        {onGlobalMappingToggle && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                全局映射
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isGlobalMapping}
+                onChange={onGlobalMappingToggle}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        )}
+      </div>
+      
+      {isGlobalMapping && (
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+            <Globe className="w-4 h-4" />
+            <span>当前使用全局表头映射配置</span>
+          </div>
+        </div>
+      )}
+      
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        将Excel列名与题目属性进行对应
+      </p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Object.entries(MAPPING_CONFIG).map(([key, config]) => (
+          <div key={key} className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {config.label}
+              {config.required && <span className="text-danger-500 ml-1">*</span>}
+            </label>
+            <select
+              value={mapping[key as keyof HeaderMappingType] || ''}
+              onChange={(e) => handleChange(key as keyof HeaderMappingType, e.target.value)}
+              className="input"
+              disabled={isGlobalMapping}
+            >
+              <option value="">-- 请选择 --</option>
+              {headers.map((header) => (
+                <option key={header} value={header}>
+                  {header}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+      
+      {isGlobalMapping && (
+        <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-300">
+            <Settings className="w-4 h-4" />
+            <span>全局映射已启用，请在上方切换为独立映射以进行配置</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}; 
