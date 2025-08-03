@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { ThemeToggle } from './components/ThemeToggle';
 import { FileUpload } from './components/FileUpload';
-import { HeaderMapping } from './components/HeaderMapping';
 import { SheetSelector } from './components/SheetSelector';
+import { HeaderMapping } from './components/HeaderMapping';
 import { QuizSettings } from './components/QuizSettings';
 import { QuizScreen } from './components/QuizScreen';
 import { ResultsScreen } from './components/ResultsScreen';
 import { ReviewScreen } from './components/ReviewScreen';
+import { ToastContainer } from './components/ToastContainer';
+import { Question, QuizSettings as QuizSettingsType, HeaderMapping as HeaderMappingType, QuestionResult, ExamSettings, MultiSheetConfig, SheetConfig } from './types';
 import { getSheetData, processMultiSheetQuestions, autoMapHeaders } from './utils/excel';
 import { generateQuizData, calculateResults } from './utils/quiz';
 import { loadExamConfig, saveExamConfig } from './utils/storage';
-import { Question, QuizSettings as QuizSettingsType, HeaderMapping as HeaderMappingType, QuestionResult, ExamSettings, MultiSheetConfig, SheetConfig } from './types';
 
 type Screen = 'upload' | 'config' | 'quiz' | 'results' | 'review';
 
@@ -45,6 +46,39 @@ export default function App() {
     globalMapping: {},
     useGlobalMapping: false
   });
+
+  // 添加提示信息状态
+  const [toasts, setToasts] = useState<Array<{
+    id: string;
+    type: 'success' | 'warning' | 'error' | 'info';
+    title: string;
+    description?: string;
+    duration?: number;
+  }>>([]);
+
+  // 显示提示信息的函数
+  const showAlert = (type: 'success' | 'warning' | 'error' | 'info', title: string, description?: string, duration = 5000) => {
+    const id = Date.now().toString();
+    const newToast = {
+      id,
+      type,
+      title,
+      description,
+      duration
+    };
+    
+    setToasts(prev => [...prev, newToast]);
+    
+    // 自动移除
+    setTimeout(() => {
+      removeToast(id);
+    }, duration);
+  };
+
+  // 移除Toast
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   // 从localStorage加载考试配置
   useEffect(() => {
@@ -111,7 +145,7 @@ export default function App() {
       const isGlobalMappingIncomplete = requiredFields.some(field => !config.globalMapping[field as keyof HeaderMappingType]);
       
       if (isGlobalMappingIncomplete) {
-        alert('全局表头映射配置不完整，请先完成全局映射配置');
+        showAlert('warning', '全局表头映射配置不完整', '请先完成全局映射配置');
         return;
       }
       
@@ -128,7 +162,7 @@ export default function App() {
         });
         
         if (invalidSheets.length > 0) {
-          alert(`以下工作表的表头映射配置不完整：${invalidSheets.map(s => s.sheetName).join(', ')}`);
+          showAlert('warning', `以下工作表的表头映射配置不完整：${invalidSheets.map(s => s.sheetName).join(', ')}`);
         }
       }
     }
@@ -173,24 +207,27 @@ export default function App() {
     const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
     
     if (selectedSheets.length === 0) {
-      alert('请至少选择一个工作表');
+      showAlert('warning', '请至少选择一个工作表', '请至少选择一个工作表');
       return;
     }
 
-    // 检查全局映射是否配置完整
-    if (multiSheetConfig.useGlobalMapping) {
+    // 检查是否有工作表使用全局映射
+    const hasGlobalMappingSheets = selectedSheets.some(sheet => sheet.useGlobalMapping);
+    
+    if (hasGlobalMappingSheets) {
+      // 如果有工作表使用全局映射，检查全局映射是否配置完整
       if (!multiSheetConfig.globalMapping.question || !multiSheetConfig.globalMapping.type || !multiSheetConfig.globalMapping.answer) {
-        alert('请完成全局表头映射配置');
+        showAlert('warning', '请完成全局表头映射配置', '请完成全局表头映射配置');
         return;
       }
     } else {
-      // 检查每个选中的工作表是否配置完整
+      // 如果所有工作表都使用独立映射，检查每个工作表的独立映射是否配置完整
       const incompleteSheets = selectedSheets.filter(sheet => 
-        !sheet.useGlobalMapping && (!sheet.mapping.question || !sheet.mapping.type || !sheet.mapping.answer)
+        !sheet.mapping.question || !sheet.mapping.type || !sheet.mapping.answer
       );
       
       if (incompleteSheets.length > 0) {
-        alert(`以下工作表的表头映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`);
+        showAlert('warning', `以下工作表的表头映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`, `以下工作表的表头映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`);
         return;
       }
     }
@@ -199,7 +236,7 @@ export default function App() {
     if (settings.mode === 'exam' && examSettings) {
       const totalExamQuestions = examSettings.totalQuestions;
       if (totalExamQuestions === 0) {
-        alert('考试配置中题目数量为0，请设置题目数量');
+        showAlert('warning', '考试配置中题目数量为0', '考试配置中题目数量为0');
         return;
       }
       
@@ -209,7 +246,7 @@ export default function App() {
       );
       
       if (invalidConfigs.length > 0) {
-        alert(`以下题型的配置超出实际题目数量：${invalidConfigs.map(c => c.questionType).join(', ')}`);
+        showAlert('warning', `以下题型的配置超出实际题目数量：${invalidConfigs.map(c => c.questionType).join(', ')}`, `以下题型的配置超出实际题目数量：${invalidConfigs.map(c => c.questionType).join(', ')}`);
         return;
       }
     }
@@ -218,7 +255,7 @@ export default function App() {
     const allQuestions = processMultiSheetQuestions(workbook, selectedSheets, multiSheetConfig.globalMapping);
     
     if (allQuestions.length === 0) {
-      alert('无法生成题库，请检查Excel内容或表头映射是否正确！');
+      showAlert('warning', '无法生成题库', '无法生成题库，请检查Excel内容或表头映射是否正确！');
       return;
     }
 
@@ -270,10 +307,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <ThemeToggle />
       
       <div className="container mx-auto px-4 py-8">
+        {/* 提示信息Toast */}
+        <ToastContainer
+          toasts={toasts}
+          onRemoveToast={removeToast}
+        />
+
         {currentScreen === 'upload' && (
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
@@ -422,6 +465,7 @@ export default function App() {
             onRetry={handleRetry}
             onReview={() => setCurrentScreen('review')}
             onBackToUpload={handleBackToUpload}
+            onBackToQuiz={() => setCurrentScreen('quiz')}
           />
         )}
 

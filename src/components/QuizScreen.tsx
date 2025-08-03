@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, Lightbulb, Grid, ArrowLeft } from 'lucide-react';
-import { Question, QuizSettings, QuestionResult } from '../types';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle, 
+  XCircle, 
+  ArrowLeft,
+  HelpCircle,
+  Grid,
+  AlertCircle
+} from 'lucide-react';
+import { Question, QuestionResult, QuizSettings } from '../types';
 import { checkAnswer } from '../utils/quiz';
 
 interface QuizScreenProps {
@@ -27,7 +36,8 @@ export const QuizScreen = ({
 }: QuizScreenProps) => {
   const [showNavPanel, setShowNavPanel] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackData, setFeedbackData] = useState<{ isCorrect: boolean; correctAnswerText: string; userAnswerText?: string } | null>(null);
+  const [feedbackData, setFeedbackData] = useState<any>(null);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
@@ -66,13 +76,20 @@ export const QuizScreen = ({
   };
 
   const handleSubmit = () => {
-    const unansweredCount = quizState.userAnswers.filter(a => a === null).length;
-    if (unansweredCount > 0 && settings.mode === 'quiz') {
-      if (!confirm(`还有 ${unansweredCount} 题未作答，确定要提交吗？`)) {
-        return;
-      }
-    }
     onComplete();
+  };
+
+  const handleEarlySubmit = () => {
+    setShowSubmitConfirm(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowSubmitConfirm(false);
+    onComplete();
+  };
+
+  const handleCancelSubmit = () => {
+    setShowSubmitConfirm(false);
   };
 
   const handleHint = () => {
@@ -196,7 +213,7 @@ export const QuizScreen = ({
                 className="btn btn-warning"
                 title="提示答案"
               >
-                <Lightbulb className="w-4 h-4 mr-2" />
+                <HelpCircle className="w-4 h-4 mr-2" />
                 提示
               </button>
             )}
@@ -378,7 +395,7 @@ export const QuizScreen = ({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <button
           onClick={handlePrev}
           disabled={quizState.currentQuestionIndex === 0}
@@ -388,16 +405,27 @@ export const QuizScreen = ({
           上一题
         </button>
         
-        {quizState.currentQuestionIndex < questions.length - 1 ? (
-          <button onClick={handleNext} className="btn btn-primary">
-            下一题
-            <ChevronRight className="w-4 h-4 ml-2" />
+        <div className="flex items-center gap-3">
+          {/* 提前交卷按钮 */}
+          <button 
+            onClick={handleEarlySubmit}
+            className="btn btn-warning text-sm px-4 py-2"
+            title="提前交卷"
+          >
+            提前交卷
           </button>
-        ) : (
-          <button onClick={handleSubmit} className="btn btn-success">
-            提交试卷
-          </button>
-        )}
+          
+          {quizState.currentQuestionIndex < questions.length - 1 ? (
+            <button onClick={handleNext} className="btn btn-primary">
+              下一题
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </button>
+          ) : (
+            <button onClick={handleSubmit} className="btn btn-success">
+              提交试卷
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation Panel */}
@@ -434,6 +462,49 @@ export const QuizScreen = ({
                   {index + 1}
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 提前交卷确认对话框 */}
+      {showSubmitConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <AlertCircle className="w-6 h-6 text-warning-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                确认提前交卷
+              </h3>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300 mb-3">
+                您确定要提前交卷吗？
+              </p>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  已答题数：{quizState.userAnswers.filter(a => a !== null).length} / {questions.length}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  未答题数：{quizState.userAnswers.filter(a => a === null).length}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleCancelSubmit}
+                className="btn btn-secondary"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleConfirmSubmit}
+                className="btn btn-warning"
+              >
+                确认交卷
+              </button>
             </div>
           </div>
         </div>

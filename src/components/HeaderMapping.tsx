@@ -1,5 +1,6 @@
-import { HeaderMapping as HeaderMappingType } from '../types';
 import { useEffect } from 'react';
+import { HeaderMapping as HeaderMappingType } from '../types';
+import { StatusBanner } from './StatusBanner';
 
 interface HeaderMappingProps {
   headers: string[];
@@ -111,37 +112,11 @@ export const HeaderMapping = ({
       </div>
       
       {/* 映射状态显示 */}
-      <div className={`p-3 rounded-lg border ${
-        mappingStatus.status === 'success'
-          ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-800'
-          : mappingStatus.status === 'error'
-            ? 'bg-danger-50 dark:bg-danger-900/20 border-danger-200 dark:border-danger-800'
-            : 'bg-info-50 dark:bg-info-900/20 border-info-200 dark:border-info-800'
-      }`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${
-              mappingStatus.status === 'success'
-                ? 'bg-success-500'
-                : mappingStatus.status === 'error'
-                  ? 'bg-danger-500'
-                  : 'bg-info-500'
-            }`}></div>
-            <span className={`text-sm font-medium ${
-              mappingStatus.status === 'success'
-                ? 'text-success-700 dark:text-success-300'
-                : mappingStatus.status === 'error'
-                  ? 'text-danger-700 dark:text-danger-300'
-                  : 'text-info-700 dark:text-info-300'
-            }`}>
-              {mappingStatus.message}
-            </span>
-          </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {mappingStatus.description}
-          </span>
-        </div>
-      </div>
+      <StatusBanner
+        type={mappingStatus.status as 'success' | 'warning' | 'error' | 'info'}
+        title={mappingStatus.message}
+        description={mappingStatus.description}
+      />
     </div>
   );
 }; 

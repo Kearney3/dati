@@ -12,6 +12,7 @@ interface ResultsScreenProps {
   onRetry: () => void;
   onReview: () => void;
   onBackToUpload: () => void;
+  onBackToQuiz: () => void;
 }
 
 export const ResultsScreen = ({ 
@@ -21,12 +22,20 @@ export const ResultsScreen = ({
   examSettings,
   onRetry, 
   onReview, 
-  onBackToUpload 
+  onBackToUpload,
+  onBackToQuiz
 }: ResultsScreenProps) => {
   const [hoveredQuestion, setHoveredQuestion] = useState<number | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'xlsx' | 'csv'>('xlsx');
   const stats = settings.mode === 'exam' && examSettings 
     ? getExamStats(results, examSettings)
     : getQuizStats(results);
+
+  const handleExportExcel = () => {
+    exportToExcel({ questions, results, settings, examSettings, stats }, exportFormat);
+    setShowExportDialog(false);
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -127,8 +136,12 @@ export const ResultsScreen = ({
           <RefreshCw className="w-4 h-4 mr-2" />
           重新答题
         </button>
+        <button onClick={onBackToQuiz} className="btn btn-info">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          返回答题
+        </button>
         <button 
-          onClick={() => exportToExcel({ questions, results, settings, examSettings, stats })}
+          onClick={() => setShowExportDialog(true)}
           className="btn btn-warning"
         >
           <Download className="w-4 h-4 mr-2" />
@@ -146,6 +159,77 @@ export const ResultsScreen = ({
           返回主页
         </button>
       </div>
+
+      {/* 导出格式选择对话框 */}
+      {showExportDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <Download className="w-6 h-6 text-warning-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                选择导出格式
+              </h3>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
+                请选择要导出的Excel格式：
+              </p>
+              
+              <div className="space-y-3">
+                <label className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <input
+                    type="radio"
+                    name="exportFormat"
+                    value="xlsx"
+                    checked={exportFormat === 'xlsx'}
+                    onChange={(e) => setExportFormat(e.target.value as 'xlsx' | 'csv')}
+                    className="mr-3"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">Excel (.xlsx)</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      包含两个工作表：答题情况和答题总结
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <input
+                    type="radio"
+                    name="exportFormat"
+                    value="csv"
+                    checked={exportFormat === 'csv'}
+                    onChange={(e) => setExportFormat(e.target.value as 'xlsx' | 'csv')}
+                    className="mr-3"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">CSV (.csv)</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      仅包含答题情况，适合数据分析
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowExportDialog(false)}
+                className="btn btn-secondary"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="btn btn-warning"
+              >
+                确认导出
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

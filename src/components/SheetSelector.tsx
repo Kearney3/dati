@@ -1,6 +1,7 @@
+import React, { useState, useEffect } from 'react';
+import { Check, Settings, X, Globe, FileText } from 'lucide-react';
 import { MultiSheetConfig, SheetConfig, HeaderMapping } from '../types';
-import { Check, Settings, Globe, FileText, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { StatusBanner } from './StatusBanner';
 import { getSheetData } from '../utils/excel';
 
 interface SheetSelectorProps {
@@ -245,25 +246,23 @@ export const SheetSelector = ({
       return { isValid: false, message: '请选择工作表' };
     }
 
-    // 检查全局映射配置
-    const requiredFields = ['question', 'type', 'answer'];
-    const missingFields = requiredFields.filter(field => !multiSheetConfig.globalMapping[field as keyof HeaderMapping]);
+    // 检查是否有工作表使用全局映射
+    const hasGlobalMappingSheets = selectedSheets.some(sheet => sheet.useGlobalMapping);
     
-    if (missingFields.length > 0) {
-      return { isValid: false, message: '全局映射配置不完整' };
-    }
-
-    // 检查独立映射配置（如果有工作表使用独立映射）
-    if (!multiSheetConfig.useGlobalMapping) {
-      const invalidSheets = selectedSheets.filter(sheet => {
-        if (sheet.useGlobalMapping) {
-          // 使用全局映射的工作表，检查全局映射是否完整
-          return requiredFields.some(field => !multiSheetConfig.globalMapping[field as keyof HeaderMapping]);
-        } else {
-          // 使用独立映射的工作表，检查独立映射是否完整
-          return requiredFields.some(field => !sheet.mapping[field as keyof HeaderMapping]);
-        }
-      });
+    if (hasGlobalMappingSheets) {
+      // 如果有工作表使用全局映射，检查全局映射是否配置完整
+      const requiredFields = ['question', 'type', 'answer'];
+      const missingFields = requiredFields.filter(field => !multiSheetConfig.globalMapping[field as keyof HeaderMapping]);
+      
+      if (missingFields.length > 0) {
+        return { isValid: false, message: '全局映射配置不完整' };
+      }
+    } else {
+      // 如果所有工作表都使用独立映射，检查每个工作表的独立映射是否配置完整
+      const requiredFields = ['question', 'type', 'answer'];
+      const invalidSheets = selectedSheets.filter(sheet => 
+        requiredFields.some(field => !sheet.mapping[field as keyof HeaderMapping])
+      );
 
       if (invalidSheets.length > 0) {
         return { 
@@ -424,44 +423,39 @@ export const SheetSelector = ({
                   .reduce((sum, sheet) => sum + sheet.questionCount, 0)} 条
               </p>
             </div>
-            <div className="flex flex-col items-end">
-              {/* 配置状态显示 */}
-              {(() => {
-                if (selectedCount === 0) {
-                  return (
-                    <div className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                      请选择工作表
-                    </div>
-                  );
-                }
-
-                if (!configValidity.isValid) {
-                  return (
-                    <div className="flex flex-col items-end">
-                      <div className="px-3 py-1 rounded-full text-sm font-medium bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-200">
-                        配置有误
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-48 text-right">
-                        {configValidity.message}
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="flex flex-col items-end">
-                    <div className="px-3 py-1 rounded-full text-sm font-medium bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-200">
-                      配置有效
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {multiSheetConfig.useGlobalMapping ? '使用全局映射' : '使用独立映射'}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
           </div>
         </div>
+        
+        {/* 配置状态Banner */}
+        {(() => {
+          if (selectedCount === 0) {
+            return (
+              <StatusBanner
+                type="info"
+                title="请选择工作表"
+                description="请至少选择一个工作表以继续配置"
+              />
+            );
+          }
+
+          if (!configValidity.isValid) {
+            return (
+              <StatusBanner
+                type="error"
+                title="配置有误"
+                description={configValidity.message}
+              />
+            );
+          }
+
+          return (
+            <StatusBanner
+              type="success"
+              title="配置有效"
+              description={multiSheetConfig.useGlobalMapping ? '使用全局映射' : '使用独立映射'}
+            />
+          );
+        })()}
       </div>
 
       {/* 表头映射配置模态框 */}

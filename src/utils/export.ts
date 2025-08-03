@@ -1,4 +1,5 @@
 import { Question, QuestionResult, QuizSettings, ExamSettings } from '../types';
+import * as XLSX from 'xlsx';
 
 interface ExportData {
   questions: Question[];
@@ -15,28 +16,17 @@ interface ExportData {
   };
 }
 
-export const exportToExcel = (data: ExportData) => {
-  // 创建Excel数据
-  const excelData = [
-    ['答题结果报告'],
-    [''],
-    ['基本信息'],
-    ['答题模式', data.settings.mode],
-    ['总题目数', data.stats.total],
-    ['答对题目', data.stats.correct],
-    ['答错题目', data.stats.incorrect],
-    ['正确率', `${data.stats.accuracy}%`],
-    ...(data.stats.totalScore !== undefined ? [['得分', `${data.stats.totalScore}/${data.stats.maxScore}`]] : []),
-    [''],
-    ['详细答题记录'],
+// 创建答题情况工作表数据
+const createQuizDetailsSheet = (data: ExportData) => {
+  const sheetData = [
     ['题号', '题目类型', '题目内容', '选项A', '选项B', '选项C', '选项D', '选项E', '选项F', '您的答案', '正确答案', '是否正确', '解析']
   ];
 
   // 添加每道题的详细记录
   data.questions.forEach((question, index) => {
     const result = data.results[index];
-    excelData.push([
-      index + 1,
+    sheetData.push([
+      String(index + 1),
       question.type,
       question.text,
       question.options[0] || '',
@@ -52,21 +42,101 @@ export const exportToExcel = (data: ExportData) => {
     ]);
   });
 
-  // 转换为CSV格式
-  const csvContent = excelData.map(row => 
-    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-  ).join('\n');
+  return sheetData;
+};
 
-  // 创建下载链接
-  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `答题结果_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+// 创建答题总结工作表数据
+const createQuizSummarySheet = (data: ExportData) => {
+  const sheetData = [
+    ['答题总结报告'],
+    [''],
+    ['总体统计'],
+    ['总题目数', data.stats.total],
+    ['答对题目', data.stats.correct],
+    ['答错题目', data.stats.incorrect],
+    ['正确率', `${data.stats.accuracy}%`],
+    ...(data.stats.totalScore !== undefined ? [['得分', `${data.stats.totalScore}/${data.stats.maxScore}`]] : []),
+    [''],
+    ['题型统计'],
+    ['题型', '题目数量', '答对数量', '正确率']
+  ];
+
+  // 按题型统计
+  const typeStats: { [key: string]: { total: number; correct: number } } = {};
+  data.questions.forEach((question, index) => {
+    const result = data.results[index];
+    const type = question.type;
+    if (!typeStats[type]) {
+      typeStats[type] = { total: 0, correct: 0 };
+    }
+    typeStats[type].total++;
+    if (result.isCorrect) {
+      typeStats[type].correct++;
+    }
+  });
+
+  // 添加题型统计
+  Object.entries(typeStats).forEach(([type, stats]) => {
+    const accuracy = ((stats.correct / stats.total) * 100).toFixed(1);
+    sheetData.push([
+      type,
+      stats.total,
+      stats.correct,
+      `${accuracy}%`
+    ]);
+  });
+
+  sheetData.push(['']);
+  sheetData.push(['答题时间', new Date().toLocaleString('zh-CN')]);
+  sheetData.push(['答题模式', data.settings.mode]);
+  sheetData.push(['题目顺序', data.settings.orderMode]);
+
+  return sheetData;
+};
+
+export const exportToExcel = (data: ExportData, format: 'xlsx' | 'csv' = 'xlsx') => {
+  if (format === 'xlsx') {
+    // 创建Excel工作簿
+    const workbook = XLSX.utils.book_new();
+    
+    // 创建答题情况工作表
+    const quizDetailsData = createQuizDetailsSheet(data);
+    const quizDetailsSheet = XLSX.utils.aoa_to_sheet(quizDetailsData);
+    XLSX.utils.book_append_sheet(workbook, quizDetailsSheet, '答题情况');
+    
+    // 创建答题总结工作表
+    const quizSummaryData = createQuizSummarySheet(data);
+    const quizSummarySheet = XLSX.utils.aoa_to_sheet(quizSummaryData);
+    XLSX.utils.book_append_sheet(workbook, quizSummarySheet, '答题总结');
+    
+    // 导出Excel文件
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `答题结果_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } else {
+    // 导出CSV格式（只包含答题情况）
+    const quizDetailsData = createQuizDetailsSheet(data);
+    const csvContent = quizDetailsData.map(row => 
+      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `答题结果_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 };
 
 export const exportToHTML = (data: ExportData) => {

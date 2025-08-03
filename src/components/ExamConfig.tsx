@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ExamConfig as ExamConfigType, ExamSettings, QuestionRange } from '../types';
 import { loadExamConfig, saveExamConfig } from '../utils/storage';
+import { StatusBanner } from './StatusBanner';
 
 interface ExamConfigProps {
   questionTypes: string[];
@@ -275,13 +276,6 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-        考试配置
-      </h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        为每种题型设置出题数量和分值
-      </p>
-      
       {selectedSheets.length > 0 && (
         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
           <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
@@ -546,32 +540,16 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
             <p className="text-sm text-gray-600 dark:text-gray-400">
               满分: {configs.reduce((sum, config) => sum + (config.count * config.score), 0)} 分
             </p>
-            {configStatus.status !== 'success' && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {configStatus.description}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-col items-end">
-            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              configStatus.status === 'success'
-                ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-200'
-                : configStatus.status === 'warning'
-                  ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-200'
-                  : configStatus.status === 'error'
-                    ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-200'
-                    : 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-200'
-            }`}>
-              {configStatus.message}
-            </div>
-            {configStatus.status === 'success' && (
-              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {configStatus.description}
-              </div>
-            )}
           </div>
         </div>
       </div>
+      
+      {/* 配置状态Banner */}
+      <StatusBanner
+        type={configStatus.status as 'success' | 'warning' | 'error' | 'info'}
+        title={configStatus.message}
+        description={configStatus.description}
+      />
     </div>
   );
 }; 
