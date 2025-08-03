@@ -26,6 +26,7 @@ export const ResultsScreen = ({
   onBackToQuiz
 }: ResultsScreenProps) => {
   const [hoveredQuestion, setHoveredQuestion] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState<'xlsx' | 'csv'>('xlsx');
   const stats = settings.mode === 'exam' && examSettings 
@@ -89,8 +90,16 @@ export const ResultsScreen = ({
           {results.map((result, index) => (
             <button
               key={index}
-              onMouseEnter={() => setHoveredQuestion(index)}
+              onMouseEnter={(e) => {
+                setHoveredQuestion(index);
+                setTooltipPosition({ x: e.clientX, y: e.clientY });
+              }}
               onMouseLeave={() => setHoveredQuestion(null)}
+              onMouseMove={(e) => {
+                if (hoveredQuestion === index) {
+                  setTooltipPosition({ x: e.clientX, y: e.clientY });
+                }
+              }}
               className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                 result.isCorrect
                   ? 'bg-success-600 text-white hover:bg-success-700'
@@ -105,7 +114,14 @@ export const ResultsScreen = ({
 
       {/* Question Tooltip */}
       {hoveredQuestion !== null && (
-        <div className="fixed z-50 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-md">
+        <div 
+          className="fixed z-50 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-md pointer-events-none"
+          style={{
+            left: `${Math.min(tooltipPosition.x + 10, window.innerWidth - 300)}px`,
+            top: `${Math.max(tooltipPosition.y - 10, 10)}px`,
+            transform: tooltipPosition.y > window.innerHeight / 2 ? 'translateY(-100%)' : 'none'
+          }}
+        >
           <div className="flex items-center mb-2">
             {results[hoveredQuestion].isCorrect ? (
               <CheckCircle className="w-4 h-4 text-success-400 mr-2" />
