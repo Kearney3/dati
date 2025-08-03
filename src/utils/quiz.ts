@@ -276,13 +276,16 @@ export const formatCorrectAnswer = (
   question: Question,
   settings: QuizSettings
 ): string => {
-  const { correctAnswerText } = checkAnswer(question, null, settings);
-  
   if (question.type === '判断题') {
-    // 从正确答案文本中提取实际选项内容（去掉A.或B.前缀）
+    // 判断题：返回实际选项内容（如"对"、"错"）
+    const { correctAnswerText } = checkAnswer(question, null, settings);
     const match = correctAnswerText.match(/^[A-Z]\.\s*(.+)$/);
     return match ? match[1] : correctAnswerText;
+  } else if (question.type === '单选题' || question.type === '多选题') {
+    // 单选题和多选题：只返回字母（如"C"或"AC"）
+    return question.answer.toUpperCase();
+  } else {
+    // 填空题等其他题型：返回原始答案
+    return question.answer;
   }
-  
-  return correctAnswerText;
 }; 
