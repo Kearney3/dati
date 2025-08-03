@@ -259,36 +259,58 @@ export const SheetSelector = ({
     const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
     
     if (selectedSheets.length === 0) {
-      return { isValid: false, message: '请选择工作表' };
+      return { isValid: false, message: '请选择工作表', description: '请至少选择一个工作表以继续配置' };
     }
 
-    // 检查是否有工作表使用全局映射
-    const hasGlobalMappingSheets = selectedSheets.some(sheet => sheet.useGlobalMapping);
+    const requiredFields = ['question', 'type', 'answer'];
     
-    if (hasGlobalMappingSheets) {
-      // 如果有工作表使用全局映射，检查全局映射是否配置完整
-      const requiredFields = ['question', 'type', 'answer'];
-      const missingFields = requiredFields.filter(field => !multiSheetConfig.globalMapping[field as keyof HeaderMapping]);
+    // 检查全局映射配置
+    const globalMappingMissingFields = requiredFields.filter(field => !multiSheetConfig.globalMapping[field as keyof HeaderMapping]);
+    const isGlobalMappingIncomplete = globalMappingMissingFields.length > 0;
+    
+    // 检查独立映射配置
+    const sheetsWithIndependentMapping = selectedSheets.filter(sheet => !sheet.useGlobalMapping);
+    const invalidIndependentSheets = sheetsWithIndependentMapping.filter(sheet => 
+      requiredFields.some(field => !sheet.mapping[field as keyof HeaderMapping])
+    );
+    
+    // 检查使用全局映射的工作表
+    const sheetsWithGlobalMapping = selectedSheets.filter(sheet => sheet.useGlobalMapping);
+    const hasGlobalMappingSheets = sheetsWithGlobalMapping.length > 0;
+    
+    // 构建详细的错误信息
+    let errorMessage = '';
+    let errorDescription = '';
+    
+    // 检查独立映射错误
+    if (invalidIndependentSheets.length > 0) {
+      errorMessage = '独立映射配置不完整';
+      errorDescription = `以下工作表的映射配置不完整：${invalidIndependentSheets.map(s => s.sheetName).join('、')}`;
+    }
+    
+    // 检查全局映射错误（只有当有工作表使用全局映射时才检查）
+    if (isGlobalMappingIncomplete && hasGlobalMappingSheets) {
+      const missingLabels = globalMappingMissingFields.map(field => {
+        const fieldLabels = { question: '题干', type: '题型', answer: '答案' };
+        return fieldLabels[field as keyof typeof fieldLabels];
+      });
       
-      if (missingFields.length > 0) {
-        return { isValid: false, message: '全局映射配置不完整' };
-      }
-    } else {
-      // 如果所有工作表都使用独立映射，检查每个工作表的独立映射是否配置完整
-      const requiredFields = ['question', 'type', 'answer'];
-      const invalidSheets = selectedSheets.filter(sheet => 
-        requiredFields.some(field => !sheet.mapping[field as keyof HeaderMapping])
-      );
-
-      if (invalidSheets.length > 0) {
-        return { 
-          isValid: false, 
-          message: `配置有误：${invalidSheets.map(s => s.sheetName).join('、')} 映射不完整` 
-        };
+      if (errorMessage) {
+        // 如果已经有独立映射错误，则合并显示
+        errorMessage = '映射配置不完整';
+        errorDescription = `${errorDescription}；全局映射缺少：${missingLabels.join('、')}`;
+      } else {
+        // 只有全局映射错误
+        errorMessage = '全局映射配置不完整';
+        errorDescription = `缺少必填字段：${missingLabels.join('、')}`;
       }
     }
+    
+    if (errorMessage) {
+      return { isValid: false, message: errorMessage, description: errorDescription };
+    }
 
-    return { isValid: true, message: '配置有效' };
+    return { isValid: true, message: '配置有效', description: '所有映射配置已完整' };
   };
 
   const configValidity = checkConfigurationValidity();
@@ -495,8 +517,8 @@ export const SheetSelector = ({
             return (
               <StatusBanner
                 type="error"
-                title="配置有误"
-                description={configValidity.message}
+                title={configValidity.message}
+                description={configValidity.description}
               />
             );
           }
@@ -505,7 +527,7 @@ export const SheetSelector = ({
             <StatusBanner
               type="success"
               title="配置有效"
-              description={multiSheetConfig.useGlobalMapping ? '使用全局映射' : '使用独立映射'}
+              description={configValidity.description}
             />
           );
         })()}
