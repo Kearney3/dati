@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trophy, RefreshCw, ArrowLeft, Eye, CheckCircle, XCircle, Download } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
-import { getQuizStats, getExamStats } from '../utils/quiz';
+import { getQuizStats, getExamStats, formatJudgmentAnswer, formatCorrectAnswer } from '../utils/quiz';
 import { exportToExcel, exportToHTML } from '../utils/export';
 
 interface ResultsScreenProps {
@@ -134,10 +134,10 @@ export const ResultsScreen = ({
           </div>
           <p className="text-sm mb-2">{questions[hoveredQuestion].text}</p>
           <p className="text-xs text-gray-300">
-            您的答案: {results[hoveredQuestion].userAnswer || '未作答'}
+            您的答案: {formatJudgmentAnswer(results[hoveredQuestion].userAnswer, questions[hoveredQuestion], settings)}
           </p>
           <p className="text-xs text-gray-300">
-            正确答案: {results[hoveredQuestion].correctAnswer}
+            正确答案: {formatCorrectAnswer(questions[hoveredQuestion], settings)}
           </p>
         </div>
       )}

@@ -247,4 +247,42 @@ export const getExamStats = (results: QuestionResult[], examSettings: ExamSettin
     totalScore,
     maxScore // 使用实际出题的总分，而不是配置的总分
   };
+};
+
+// 将判断题的A/B字母转换为实际选项内容
+export const formatJudgmentAnswer = (
+  answer: string | null | undefined,
+  question: Question,
+  settings: QuizSettings
+): string => {
+  if (!answer || question.type !== '判断题') {
+    return answer || '未作答';
+  }
+
+  const customOptions = [settings.judgementTrue, settings.judgementFalse];
+  
+  if (answer === 'A') {
+    return customOptions[0];
+  } else if (answer === 'B') {
+    return customOptions[1];
+  }
+  
+  // 如果不是A/B，返回原始答案
+  return answer;
+};
+
+// 格式化正确答案显示
+export const formatCorrectAnswer = (
+  question: Question,
+  settings: QuizSettings
+): string => {
+  const { correctAnswerText } = checkAnswer(question, null, settings);
+  
+  if (question.type === '判断题') {
+    // 从正确答案文本中提取实际选项内容（去掉A.或B.前缀）
+    const match = correctAnswerText.match(/^[A-Z]\.\s*(.+)$/);
+    return match ? match[1] : correctAnswerText;
+  }
+  
+  return correctAnswerText;
 }; 

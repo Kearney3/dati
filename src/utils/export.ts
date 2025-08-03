@@ -1,5 +1,5 @@
 import { Question, QuestionResult, QuizSettings, ExamSettings } from '../types';
-import { checkAnswer } from './quiz';
+import { formatJudgmentAnswer, formatCorrectAnswer } from './quiz';
 import * as XLSX from 'xlsx';
 
 interface ExportData {
@@ -27,47 +27,36 @@ const createQuizDetailsSheet = (data: ExportData) => {
   data.questions.forEach((question, index) => {
     const result = data.results[index];
     
-    // 获取格式化的答案显示
-    let userAnswerDisplay = result.userAnswer || '未作答';
-    let correctAnswerDisplay = question.answer;
-    
-    // 对于判断题，使用checkAnswer函数获取正确的答案格式
-    if (question.type === '判断题' && result.userAnswer) {
-      const answerData = checkAnswer(question, result.userAnswer, data.settings);
-      if (answerData.userAnswerText) {
-        // 提取纯文本（去掉HTML标签如果有的话）
-        userAnswerDisplay = answerData.userAnswerText.replace(/<[^>]*>/g, '');
-      }
-      if (answerData.correctAnswerText) {
-        // 提取纯文本，去掉选项字母前缀（如"A. 对" -> "对"）
-        correctAnswerDisplay = answerData.correctAnswerText.replace(/^[A-Z]\.\s*/, '').replace(/<[^>]*>/g, '');
-      }
+    // 处理选项显示 - 判断题使用自定义选项
+    let optionA = '', optionB = '', optionC = '', optionD = '', optionE = '', optionF = '';
+    if (question.type === '判断题') {
+      optionA = data.settings.judgementTrue;
+      optionB = data.settings.judgementFalse;
+    } else {
+      optionA = question.options[0] || '';
+      optionB = question.options[1] || '';
+      optionC = question.options[2] || '';
+      optionD = question.options[3] || '';
+      optionE = question.options[4] || '';
+      optionF = question.options[5] || '';
     }
     
-    // 处理选项显示：判断题使用自定义选项，其他使用原始选项
-    const optionsToShow = question.type === '判断题' 
-      ? [data.settings.judgementTrue, data.settings.judgementFalse, '', '', '', '']
-      : [
-          question.options[0] || '',
-          question.options[1] || '',
-          question.options[2] || '',
-          question.options[3] || '',
-          question.options[4] || '',
-          question.options[5] || ''
-        ];
+    // 格式化用户答案和正确答案
+    const formattedUserAnswer = formatJudgmentAnswer(result.userAnswer, question, data.settings);
+    const formattedCorrectAnswer = formatCorrectAnswer(question, data.settings);
     
     sheetData.push([
       String(index + 1),
       question.type,
       question.text,
-      optionsToShow[0],
-      optionsToShow[1],
-      optionsToShow[2],
-      optionsToShow[3],
-      optionsToShow[4],
-      optionsToShow[5],
-      userAnswerDisplay,
-      correctAnswerDisplay,
+      optionA,
+      optionB,
+      optionC,
+      optionD,
+      optionE,
+      optionF,
+      formattedUserAnswer,
+      formattedCorrectAnswer,
       result.isCorrect ? '正确' : '错误',
       question.explanation || ''
     ]);
@@ -284,19 +273,41 @@ export const exportToHTML = (data: ExportData) => {
     <div id="questionsContainer">
         ${data.questions.map((question, index) => {
             const result = data.results[index];
-            const optionsHtml = question.options.length > 0 ? `
+            
+            // 处理选项显示 - 判断题使用自定义选项
+            const questionOptions = question.type === '判断题' 
+                ? [data.settings.judgementTrue, data.settings.judgementFalse]
+                : question.options;
+            
+            const optionsHtml = questionOptions.length > 0 ? `
                 <div class="options">
                     <strong>选项:</strong>
-                    ${question.options.map((option, optIndex) => {
-                        const isCorrect = option === question.answer;
-                        const isUserAnswer = result.userAnswer && result.userAnswer.includes(option);
+                    ${questionOptions.map((option, optIndex) => {
+                        const letter = String.fromCharCode(65 + optIndex);
+                        
+                        // 判断是否为正确答案
+                        const correctAnswerFormatted = formatCorrectAnswer(question, data.settings);
+                        const isCorrect = (question.type === '判断题') 
+                            ? option === correctAnswerFormatted
+                            : option === question.answer;
+                        
+                        // 判断是否为用户选答案
+                        const userAnswerFormatted = formatJudgmentAnswer(result.userAnswer, question, data.settings);
+                        const isUserAnswer = (question.type === '判断题')
+                            ? option === userAnswerFormatted
+                            : result.userAnswer && result.userAnswer.includes(letter);
+                        
                         let className = 'option';
                         if (isCorrect) className += ' correct-option';
                         if (isUserAnswer) className += ' user-option';
-                        return `<div class="${className}">${String.fromCharCode(65 + optIndex)}. ${option}</div>`;
+                        return `<div class="${className}">${letter}. ${option}</div>`;
                     }).join('')}
                 </div>
             ` : '';
+            
+            // 格式化用户答案和正确答案
+            const formattedUserAnswer = formatJudgmentAnswer(result.userAnswer, question, data.settings);
+            const formattedCorrectAnswer = formatCorrectAnswer(question, data.settings);
             
             return `
             <div class="question ${result.isCorrect ? 'correct' : 'incorrect'}" 
@@ -309,8 +320,8 @@ export const exportToHTML = (data: ExportData) => {
                 <p>${question.text}</p>
                 <div class="options-container hidden">${optionsHtml}</div>
                 <div class="answer">
-                    <div class="user-answer"><strong>您的答案:</strong> ${result.userAnswer || '未作答'}</div>
-                    <div class="correct-answer"><strong>正确答案:</strong> ${question.answer}</div>
+                    <div class="user-answer"><strong>您的答案:</strong> ${formattedUserAnswer}</div>
+                    <div class="correct-answer"><strong>正确答案:</strong> ${formattedCorrectAnswer}</div>
                 </div>
                 <div class="explanation-container hidden">
                     ${question.explanation ? `<div class="explanation"><strong>解析:</strong> ${question.explanation}</div>` : '<div class="explanation">暂无解析</div>'}
