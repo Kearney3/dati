@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { ThemeToggle } from './components/ThemeToggle';
+import React, { useState, useEffect } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { SheetSelector } from './components/SheetSelector';
 import { HeaderMapping } from './components/HeaderMapping';
@@ -7,11 +6,58 @@ import { QuizSettings } from './components/QuizSettings';
 import { QuizScreen } from './components/QuizScreen';
 import { ResultsScreen } from './components/ResultsScreen';
 import { ReviewScreen } from './components/ReviewScreen';
+import { ThemeToggle } from './components/ThemeToggle';
 import { ToastContainer } from './components/ToastContainer';
-import { Question, QuizSettings as QuizSettingsType, HeaderMapping as HeaderMappingType, QuestionResult, ExamSettings, MultiSheetConfig, SheetConfig } from './types';
-import { getSheetData, processMultiSheetQuestions, autoMapHeaders } from './utils/excel';
+import { Github } from 'lucide-react';
+import { 
+  Question,
+  QuizSettings as QuizSettingsType, 
+  ExamSettings, 
+  MultiSheetConfig, 
+  SheetConfig, 
+  HeaderMapping as HeaderMappingType,
+  QuestionResult
+} from './types';
+import { 
+  getSheetData, 
+  autoMapHeaders,
+  processMultiSheetQuestions
+} from './utils/excel';
 import { generateQuizData, calculateResults } from './utils/quiz';
 import { loadExamConfig, saveExamConfig } from './utils/storage';
+
+// 自定义hook：检测是否应该显示footer
+const useFooterVisibility = () => {
+  const [shouldShowFooter, setShouldShowFooter] = useState(false);
+
+  useEffect(() => {
+    const checkFooterVisibility = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // 如果内容高度小于等于窗口高度，或者用户滚动到底部，则显示footer
+      const isAtBottom = scrollTop + windowHeight >= documentHeight - 10; // 10px tolerance
+      const isContentShort = documentHeight <= windowHeight;
+      
+      setShouldShowFooter(isAtBottom || isContentShort);
+    };
+
+    // 初始检查
+    checkFooterVisibility();
+    
+    // 监听滚动事件
+    window.addEventListener('scroll', checkFooterVisibility);
+    window.addEventListener('resize', checkFooterVisibility);
+    
+    return () => {
+      window.removeEventListener('scroll', checkFooterVisibility);
+      window.removeEventListener('resize', checkFooterVisibility);
+    };
+  }, []);
+
+  return shouldShowFooter;
+};
 
 type Screen = 'upload' | 'config' | 'quiz' | 'results' | 'review';
 
@@ -55,6 +101,9 @@ export default function App() {
     description?: string;
     duration?: number;
   }>>([]);
+
+  // 使用自定义hook检测footer显示
+  const shouldShowFooter = useFooterVisibility();
 
   // 显示提示信息的函数
   const showAlert = (type: 'success' | 'warning' | 'error' | 'info', title: string, description?: string, duration = 5000) => {
@@ -307,10 +356,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <ThemeToggle />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 flex-1">
         {/* 提示信息Toast */}
         <ToastContainer
           toasts={toasts}
@@ -480,6 +529,35 @@ export default function App() {
           />
         )}
       </div>
+      
+      {/* GitHub链接 */}
+      {shouldShowFooter && currentScreen !== 'review' && (
+        <footer className="mt-auto py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 transition-opacity duration-300">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6">
+              <span className="text-gray-600 dark:text-gray-400 text-sm">
+                © 2024 智能答题系统 - 支持Excel文件导入的多功能测验应用
+              </span>
+              <div className="flex items-center space-x-4">
+                <a
+                  href="https://github.com/your-username/dati_v2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 group"
+                  title="查看项目源码"
+                >
+                  <Github className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="text-sm font-medium">GitHub</span>
+                </a>
+                <span className="text-gray-400 dark:text-gray-500">|</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs">
+                  Made with ❤️
+                </span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 } 

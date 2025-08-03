@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { ArrowLeft, Filter, CheckCircle, XCircle, Home } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowLeft, Filter, CheckCircle, XCircle, Home, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { checkAnswer } from '../utils/quiz';
 
@@ -25,6 +25,12 @@ export const ReviewScreen = ({
 }: ReviewScreenProps) => {
   const [correctnessFilter, setCorrectnessFilter] = useState<FilterType>('all');
   const [typeFilter, setTypeFilter] = useState<QuestionTypeFilter>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+
 
   const filteredQuestions = useMemo(() => {
     return questions.filter((question, index) => {
@@ -37,32 +43,143 @@ export const ReviewScreen = ({
       // Apply type filter
       if (typeFilter !== 'all' && question.type !== typeFilter) return false;
       
+      // Apply search keyword filter
+      if (searchKeyword.trim()) {
+        const keyword = searchKeyword.trim().toLowerCase();
+        const questionText = question.text.toLowerCase();
+        const optionsText = question.options ? question.options.join(' ').toLowerCase() : '';
+        const explanationText = question.explanation ? question.explanation.toLowerCase() : '';
+        
+        const matchesKeyword = questionText.includes(keyword) || 
+                              optionsText.includes(keyword) || 
+                              explanationText.includes(keyword);
+        
+        if (!matchesKeyword) return false;
+      }
+      
       return true;
     });
-  }, [questions, results, correctnessFilter, typeFilter]);
+  }, [questions, results, correctnessFilter, typeFilter, searchKeyword]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredQuestions.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const currentQuestions = filteredQuestions.slice(startIndex, endIndex);
 
   const questionTypes = useMemo(() => {
     return Array.from(new Set(questions.map(q => q.type)));
   }, [questions]);
 
+  // Reset to first page when filters change
+  const handleFilterChange = (newCorrectnessFilter: FilterType, newTypeFilter: QuestionTypeFilter) => {
+    setCorrectnessFilter(newCorrectnessFilter);
+    setTypeFilter(newTypeFilter);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  };
+
+  // Reset to first page when search keyword changes
+  const handleSearchChange = (keyword: string) => {
+    setSearchKeyword(keyword);
+    setCurrentPage(1);
+  };
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchKeyword('');
+    setCurrentPage(1);
+  };
+
+  // Highlight search keyword in text
+  const highlightKeyword = (text: string, keyword: string) => {
+    if (!keyword.trim()) return text;
+    
+    const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">
+          {part}
+        </mark>
+      ) : part
+    );
+  };
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Scroll position tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      setShowScrollTop(scrollTop > 300);
+      setShowScrollBottom(scrollTop + windowHeight < documentHeight - 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto relative">
+      {/* Scroll buttons - floating at bottom-right corner */}
+      <div className="fixed right-4 bottom-4 z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 space-y-1">
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              title="回到顶部"
+            >
+              <ArrowUp className="w-5 h-5" />
+            </button>
+          )}
+          {showScrollBottom && (
+            <button
+              onClick={scrollToBottom}
+              className="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              title="跳转到底部"
+            >
+              <ArrowDown className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex space-x-2">
-          <button onClick={onBack} className="btn btn-secondary">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            返回结果
-          </button>
-          <button onClick={onBackToUpload} className="btn btn-primary">
-            <Home className="w-4 h-4 mr-2" />
-            返回主页
-          </button>
-        </div>
+        <button onClick={onBack} className="btn btn-secondary">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          返回结果
+        </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           答题回顾
         </h1>
-        <div className="w-20"></div> {/* Spacer for centering */}
+        <button onClick={onBackToUpload} className="btn btn-primary">
+          <Home className="w-4 h-4 mr-2" />
+          返回主页
+        </button>
       </div>
 
       {/* Filters */}
@@ -70,6 +187,39 @@ export const ReviewScreen = ({
         <div className="flex items-center mb-4">
           <Filter className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
           <span className="font-medium text-gray-700 dark:text-gray-300">筛选条件</span>
+        </div>
+
+        {/* Search Box */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            关键词搜索
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={searchKeyword}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="搜索题干、选项或解析内容..."
+              className="block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            />
+            {searchKeyword && (
+              <button
+                onClick={clearSearch}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                title="清除搜索"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {searchKeyword && (
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              找到 {filteredQuestions.length} 个匹配结果
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -86,7 +236,7 @@ export const ReviewScreen = ({
               ].map((filter) => (
                 <button
                   key={filter.value}
-                  onClick={() => setCorrectnessFilter(filter.value as FilterType)}
+                  onClick={() => handleFilterChange(filter.value as FilterType, typeFilter)}
                   className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
                     correctnessFilter === filter.value
                       ? 'bg-primary-600 text-white'
@@ -106,7 +256,7 @@ export const ReviewScreen = ({
             </label>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setTypeFilter('all')}
+                onClick={() => handleFilterChange(correctnessFilter, 'all')}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
                   typeFilter === 'all'
                     ? 'bg-primary-600 text-white'
@@ -118,7 +268,7 @@ export const ReviewScreen = ({
               {questionTypes.map((type) => (
                 <button
                   key={type}
-                  onClick={() => setTypeFilter(type)}
+                  onClick={() => handleFilterChange(correctnessFilter, type)}
                   className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
                     typeFilter === type
                       ? 'bg-primary-600 text-white'
@@ -131,18 +281,53 @@ export const ReviewScreen = ({
             </div>
           </div>
         </div>
+
+        {/* Pagination Settings */}
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                每页显示:
+              </label>
+              <div className="flex space-x-2">
+                {[
+                  { value: 5, label: '5题' },
+                  { value: 10, label: '10题' },
+                  { value: 20, label: '20题' },
+                  { value: 50, label: '50题' },
+                  { value: 100, label: '100题' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handlePageSizeChange(option.value)}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      pageSize === option.value
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              共 {filteredQuestions.length} 题，第 {currentPage} / {totalPages} 页
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Questions */}
       <div className="space-y-6">
-        {filteredQuestions.length === 0 ? (
+        {currentQuestions.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400">
               没有符合筛选条件的题目
             </p>
           </div>
         ) : (
-          filteredQuestions.map((question) => {
+          currentQuestions.map((question) => {
             const originalIndex = questions.indexOf(question);
             const result = results[originalIndex];
             const userAnswer = userAnswers[originalIndex];
@@ -175,7 +360,7 @@ export const ReviewScreen = ({
 
                 {/* Question Text */}
                 <p className="text-gray-900 dark:text-white mb-4">
-                  {question.text}
+                  {highlightKeyword(question.text, searchKeyword)}
                 </p>
 
                 {/* Options */}
@@ -207,7 +392,7 @@ export const ReviewScreen = ({
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-gray-900 dark:text-white">
-                              {letter}. {option}
+                              {letter}. {highlightKeyword(option, searchKeyword)}
                             </span>
                             {isUserSelected && (
                               <span className="px-2 py-1 bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-200 rounded-full text-xs font-medium">
@@ -268,7 +453,7 @@ export const ReviewScreen = ({
                       解析:
                     </p>
                     <p className="text-blue-700 dark:text-blue-300">
-                      {question.explanation}
+                      {highlightKeyword(question.explanation, searchKeyword)}
                     </p>
                   </div>
                 )}
@@ -277,6 +462,83 @@ export const ReviewScreen = ({
           })
         )}
       </div>
+
+      {/* Pagination Controls - Fixed at bottom */}
+      {totalPages > 1 && (
+        <div className="fixed left-1/2 transform -translate-x-1/2 z-40 bottom-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3">
+            <div className="flex items-center justify-center space-x-2">
+              {/* First Page Button */}
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="第一页"
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </button>
+              
+              {/* Previous Page Button */}
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              
+              {/* Page Numbers */}
+              <div className="flex space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        currentPage === pageNum
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Next Page Button */}
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              
+              {/* Last Page Button */}
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="最后一页"
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

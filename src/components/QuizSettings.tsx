@@ -426,12 +426,12 @@ export const QuizSettings = ({
           {/* 判断题选项 - 只在有判断题时显示 */}
           {questionTypes.includes('判断题') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                判断题选项配置
-              </label>
               <div className="flex items-center gap-2 mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  判断题选项配置
+                </label>
                 <div className="relative group">
-                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-help">
+                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-help hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                     <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">?</span>
                   </div>
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
@@ -448,7 +448,6 @@ export const QuizSettings = ({
                     </div>
                   </div>
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">支持多种正确答案格式</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
