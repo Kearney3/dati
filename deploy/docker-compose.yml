@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  dati-quiz-app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "5080:5080"
+    container_name: dati-quiz-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - quiz-network
+
+  # 可选：添加反向代理
+  nginx-proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro  # SSL证书目录（可选）
+    depends_on:
+      - dati-quiz-app
+    networks:
+      - quiz-network
+    restart: unless-stopped
+    profiles:
+      - proxy
+
+networks:
+  quiz-network:
+    driver: bridge
