@@ -1,4 +1,5 @@
 import { Question, QuestionResult, QuizSettings, ExamSettings } from '../types';
+import { checkAnswer } from './quiz';
 import * as XLSX from 'xlsx';
 
 interface ExportData {
@@ -25,18 +26,48 @@ const createQuizDetailsSheet = (data: ExportData) => {
   // 添加每道题的详细记录
   data.questions.forEach((question, index) => {
     const result = data.results[index];
+    
+    // 获取格式化的答案显示
+    let userAnswerDisplay = result.userAnswer || '未作答';
+    let correctAnswerDisplay = question.answer;
+    
+    // 对于判断题，使用checkAnswer函数获取正确的答案格式
+    if (question.type === '判断题' && result.userAnswer) {
+      const answerData = checkAnswer(question, result.userAnswer, data.settings);
+      if (answerData.userAnswerText) {
+        // 提取纯文本（去掉HTML标签如果有的话）
+        userAnswerDisplay = answerData.userAnswerText.replace(/<[^>]*>/g, '');
+      }
+      if (answerData.correctAnswerText) {
+        // 提取纯文本，去掉选项字母前缀（如"A. 对" -> "对"）
+        correctAnswerDisplay = answerData.correctAnswerText.replace(/^[A-Z]\.\s*/, '').replace(/<[^>]*>/g, '');
+      }
+    }
+    
+    // 处理选项显示：判断题使用自定义选项，其他使用原始选项
+    const optionsToShow = question.type === '判断题' 
+      ? [data.settings.judgementTrue, data.settings.judgementFalse, '', '', '', '']
+      : [
+          question.options[0] || '',
+          question.options[1] || '',
+          question.options[2] || '',
+          question.options[3] || '',
+          question.options[4] || '',
+          question.options[5] || ''
+        ];
+    
     sheetData.push([
       String(index + 1),
       question.type,
       question.text,
-      question.options[0] || '',
-      question.options[1] || '',
-      question.options[2] || '',
-      question.options[3] || '',
-      question.options[4] || '',
-      question.options[5] || '',
-      result.userAnswer || '未作答',
-      question.answer,
+      optionsToShow[0],
+      optionsToShow[1],
+      optionsToShow[2],
+      optionsToShow[3],
+      optionsToShow[4],
+      optionsToShow[5],
+      userAnswerDisplay,
+      correctAnswerDisplay,
       result.isCorrect ? '正确' : '错误',
       question.explanation || ''
     ]);
