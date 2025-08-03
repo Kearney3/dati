@@ -47,7 +47,7 @@ export const HeaderMapping = ({
       const missingLabels = missingFields.map(field => MAPPING_CONFIG[field as keyof typeof MAPPING_CONFIG].label);
       return {
         status: 'error',
-        message: '映射不完整',
+        message: '全局映射不完整',
         description: `缺少必填字段：${missingLabels.join('、')}`,
         color: 'danger',
         sheetName: sheetName,
@@ -75,12 +75,7 @@ export const HeaderMapping = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          表头映射
-          {sheetName && (
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-              ({sheetName})
-            </span>
-          )}
+          全局映射
         </h3>
       </div>
       

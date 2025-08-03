@@ -140,12 +140,12 @@ export default function App() {
     );
     
     if (newlySelectedSheets.length > 0) {
-      // 检查全局映射是否完整
+      // 检查新选中工作表的全局映射合法性
       const requiredFields = ['question', 'type', 'answer'];
       const isGlobalMappingIncomplete = requiredFields.some(field => !config.globalMapping[field as keyof HeaderMappingType]);
       
       if (isGlobalMappingIncomplete) {
-        showAlert('warning', '全局表头映射配置不完整', '请先完成全局映射配置');
+        showAlert('warning', '全局映射配置不完整', '请先完成全局映射配置');
         return;
       }
       
@@ -162,7 +162,7 @@ export default function App() {
         });
         
         if (invalidSheets.length > 0) {
-          showAlert('warning', `以下工作表的表头映射配置不完整：${invalidSheets.map(s => s.sheetName).join(', ')}`);
+          showAlert('warning', `以下工作表的全局映射配置不完整：${invalidSheets.map(s => s.sheetName).join(', ')}`);
         }
       }
     }
@@ -181,7 +181,7 @@ export default function App() {
     const { headers } = getSheetData(workbook, firstSelectedSheet.sheetName);
     setHeaders(headers || []);
 
-    // 表头映射现在默认为全局映射
+    // 设置全局映射
     setMapping(config.globalMapping);
 
     // 处理所有选中工作表的数据
@@ -192,7 +192,7 @@ export default function App() {
   const handleMappingChange = (mapping: Partial<HeaderMappingType>) => {
     setMapping(mapping);
     
-    // 表头映射现在默认为全局映射
+    // 更新全局映射配置
     setMultiSheetConfig(prev => ({
       ...prev,
       globalMapping: mapping
@@ -207,7 +207,7 @@ export default function App() {
     const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
     
     if (selectedSheets.length === 0) {
-      showAlert('warning', '请至少选择一个工作表', '请至少选择一个工作表');
+      showAlert('warning', '请至少选择一个工作表', '请先选择至少一个工作表');
       return;
     }
 
@@ -217,7 +217,7 @@ export default function App() {
     if (hasGlobalMappingSheets) {
       // 如果有工作表使用全局映射，检查全局映射是否配置完整
       if (!multiSheetConfig.globalMapping.question || !multiSheetConfig.globalMapping.type || !multiSheetConfig.globalMapping.answer) {
-        showAlert('warning', '请完成全局表头映射配置', '请完成全局表头映射配置');
+        showAlert('warning', '请完成全局映射配置', '请先完成全局映射配置');
         return;
       }
     } else {
@@ -227,7 +227,7 @@ export default function App() {
       );
       
       if (incompleteSheets.length > 0) {
-        showAlert('warning', `以下工作表的表头映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`, `以下工作表的表头映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`);
+        showAlert('warning', `以下工作表的独立映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`, `以下工作表的独立映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`);
         return;
       }
     }
@@ -255,7 +255,7 @@ export default function App() {
     const allQuestions = processMultiSheetQuestions(workbook, selectedSheets, multiSheetConfig.globalMapping);
     
     if (allQuestions.length === 0) {
-      showAlert('warning', '无法生成题库', '无法生成题库，请检查Excel内容或表头映射是否正确！');
+      showAlert('warning', '无法生成题库', '无法生成题库，请检查Excel内容或全局映射是否正确！');
       return;
     }
 
@@ -388,7 +388,7 @@ export default function App() {
                   配置题库
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  选择工作表并配置表头映射
+                  选择工作表并配置全局映射
                 </p>
               </div>
               <div className="w-24"></div> {/* 占位，保持标题居中 */}

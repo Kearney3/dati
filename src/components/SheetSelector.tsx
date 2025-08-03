@@ -166,10 +166,10 @@ export const SheetSelector = ({
   const handleToggleGlobalMapping = () => {
     const newUseGlobalMapping = !multiSheetConfig.useGlobalMapping;
     
-    // 当开启统一表头映射时，将所有工作表切换至使用全局映射
+    // 当开启统一表头映射时，将所有选中的工作表切换至使用全局映射
     const newSheets = multiSheetConfig.sheets.map(sheet => ({
       ...sheet,
-      useGlobalMapping: newUseGlobalMapping ? true : sheet.useGlobalMapping
+      useGlobalMapping: newUseGlobalMapping && sheet.isSelected ? true : sheet.useGlobalMapping
     }));
     
     onMultiSheetConfigChange({
@@ -180,21 +180,37 @@ export const SheetSelector = ({
   };
 
   const handleSheetToggle = (sheetName: string) => {
-    const newSheets = multiSheetConfig.sheets.map(sheet => 
+    const updatedSheets = multiSheetConfig.sheets.map(sheet => 
       sheet.sheetName === sheetName 
         ? { ...sheet, isSelected: !sheet.isSelected }
         : sheet
     );
     
-    // 检查是否需要更新统一表头映射状态
-    const selectedSheets = newSheets.filter(sheet => sheet.isSelected);
-    const allUseGlobalMapping = selectedSheets.length > 0 && selectedSheets.every(sheet => sheet.useGlobalMapping);
-    
     onMultiSheetConfigChange({
       ...multiSheetConfig,
-      useGlobalMapping: allUseGlobalMapping,
-      sheets: newSheets
+      sheets: updatedSheets
     });
+    
+    // 检查是否需要更新统一全局映射状态
+    const selectedSheets = updatedSheets.filter(sheet => sheet.isSelected);
+    if (selectedSheets.length === 0) {
+      // 当没有选中工作表时，保持统一全局映射状态不变
+      return;
+    }
+    
+    // 当开启统一全局映射时，将新选中的工作表切换至使用全局映射
+    if (multiSheetConfig.useGlobalMapping) {
+      const finalUpdatedSheets = updatedSheets.map(sheet => 
+        sheet.sheetName === sheetName && sheet.isSelected
+          ? { ...sheet, useGlobalMapping: true }
+          : sheet
+      );
+      
+      onMultiSheetConfigChange({
+        ...multiSheetConfig,
+        sheets: finalUpdatedSheets
+      });
+    }
   };
 
   const handleSheetUseGlobalMapping = (sheetName: string) => {
@@ -204,7 +220,7 @@ export const SheetSelector = ({
         : sheet
     );
     
-    // 检查是否需要更新统一表头映射状态
+    // 检查是否需要更新统一全局映射状态
     const selectedSheets = newSheets.filter(sheet => sheet.isSelected);
     const allUseGlobalMapping = selectedSheets.length > 0 && selectedSheets.every(sheet => sheet.useGlobalMapping);
     
@@ -277,6 +293,37 @@ export const SheetSelector = ({
 
   const configValidity = checkConfigurationValidity();
 
+  // 检查是否需要更新统一全局映射状态
+  useEffect(() => {
+    const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
+    
+    if (selectedSheets.length === 0) {
+      // 当没有选中工作表时，保持统一全局映射状态不变
+      return;
+    }
+    
+    // 当开启统一全局映射时，只对新选中的工作表启用全局映射
+    if (multiSheetConfig.useGlobalMapping) {
+      const updatedSheets = multiSheetConfig.sheets.map(sheet => 
+        sheet.isSelected && !sheet.useGlobalMapping
+          ? { ...sheet, useGlobalMapping: true }
+          : sheet
+      );
+      
+      // 只有当有工作表状态发生变化时才更新
+      const hasChanges = updatedSheets.some((sheet, index) => 
+        sheet.useGlobalMapping !== multiSheetConfig.sheets[index].useGlobalMapping
+      );
+      
+      if (hasChanges) {
+        onMultiSheetConfigChange({
+          ...multiSheetConfig,
+          sheets: updatedSheets
+        });
+      }
+    }
+  }, [multiSheetConfig.useGlobalMapping, multiSheetConfig.sheets, onMultiSheetConfigChange]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -306,7 +353,7 @@ export const SheetSelector = ({
             <div className="flex items-center gap-2">
               <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span className="font-medium text-gray-900 dark:text-white">
-                统一表头映射
+                统一全局映射
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -320,7 +367,7 @@ export const SheetSelector = ({
             </label>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            启用后，所有工作表将使用统一的表头映射配置
+            启用后，所有工作表将使用统一的全局映射配置
           </p>
         </div>
 
@@ -368,7 +415,9 @@ export const SheetSelector = ({
                           sheet.useGlobalMapping
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
                             : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
-                        }`}
+                        } ${multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping ? 'cursor-not-allowed opacity-50' : ''}`}
+                        disabled={multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping}
+                        title={multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping ? "全局映射已启用，无法单独控制" : "切换使用全局映射"}
                       >
                         <Globe className="w-4 h-4" />
                         <span>使用全局映射</span>
@@ -383,10 +432,10 @@ export const SheetSelector = ({
                             : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 border border-gray-200 dark:border-gray-600 cursor-not-allowed'
                         }`}
                         disabled={sheet.useGlobalMapping}
-                        title={sheet.useGlobalMapping ? "请先取消使用全局映射" : "配置表头映射"}
+                        title={sheet.useGlobalMapping ? "请先取消使用全局映射" : "配置独立映射"}
                       >
                         <Settings className="w-4 h-4" />
-                        <span>独立映射</span>
+                        <span>独立映射配置</span>
                       </button>
                     </>
                   )}
@@ -398,7 +447,11 @@ export const SheetSelector = ({
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Check className="w-4 h-4 text-green-500" />
                     <span>已选择</span>
-                    {!multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping && (
+                    {sheet.useGlobalMapping ? (
+                      <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                        使用全局映射
+                      </span>
+                    ) : (
                       <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
                         使用独立映射
                       </span>
@@ -458,7 +511,7 @@ export const SheetSelector = ({
         })()}
       </div>
 
-      {/* 表头映射配置模态框 */}
+      {/* 全局映射配置模态框 */}
       {selectedSheetForMapping && (
         <SheetMappingModal
           sheet={selectedSheetForMapping}
