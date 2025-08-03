@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { SheetSelector } from './components/SheetSelector';
 import { HeaderMapping } from './components/HeaderMapping';

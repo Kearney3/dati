@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { QuizSettings as QuizSettingsType, ExamSettings } from '../types';
 import { ExamConfig } from './ExamConfig';
 

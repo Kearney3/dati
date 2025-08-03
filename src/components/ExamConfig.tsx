@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ExamConfig as ExamConfigType, ExamSettings, QuestionRange } from '../types';
 import { loadExamConfig, saveExamConfig } from '../utils/storage';
 import { StatusBanner } from './StatusBanner';

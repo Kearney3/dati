@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Settings, X, Globe, FileText } from 'lucide-react';
 import { MultiSheetConfig, SheetConfig, HeaderMapping } from '../types';
 import { StatusBanner } from './StatusBanner';
