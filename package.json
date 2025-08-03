@@ -1,8 +1,19 @@
 {
-  "name": "modern-quiz-app",
+  "name": "dati-quiz-app",
   "version": "1.0.0",
-  "description": "Modern quiz application with Excel file support",
+  "description": "一个现代化的智能答题系统，支持Excel文件导入，提供多种测验模式和完善的用户体验",
   "main": "index.js",
+  "homepage": "https://github.com/Kearney3/dati",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kearney3/dati.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kearney3/dati/issues"
+  },
+  "keywords": ["quiz", "exam", "excel", "education", "react", "typescript", "答题系统", "考试", "测验"],
+  "author": "Kearney",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

@@ -187,30 +187,48 @@ export const functionName = (param: Type): ReturnType => {
 };
 ```
 
-## 🚀 部署
+## 🚀 部署指南
 
-### Docker部署
+本项目支持多种部署方式，选择最适合您的方案：
+
+### 🌟 一键部署
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Kearney3/dati)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/Kearney3/dati)
+
+### 📦 命令行部署
+
+#### Vercel 部署（推荐）
 ```bash
-# 构建镜像
-docker build -f deploy/Dockerfile -t quiz-app .
-
-# 运行容器
-docker run -p 80:80 quiz-app
+# 安装并部署
+npm install -g vercel
+vercel --prod
 ```
 
-### Netlify部署
-1. 连接GitHub仓库
-2. 设置构建命令: `npm run build`
-3. 设置发布目录: `dist`
-4. 自动部署
-
-### 手动部署
+#### Netlify 部署
 ```bash
-# 构建项目
+# 安装CLI并部署
+npm install -g netlify-cli
 npm run build
-
-# 上传dist目录到Web服务器
+netlify deploy --prod --dir=dist
 ```
+
+#### Docker 部署
+```bash
+# 使用Docker
+docker build -f deploy/Dockerfile -t dati-quiz-app .
+docker run -d -p 5080:5080 dati-quiz-app
+
+# 使用Docker Compose
+cd deploy && docker-compose up -d
+```
+
+#### GitHub Pages 部署
+推送到 main 分支即可自动部署。访问: `https://username.github.io/dati`
+
+### ⚙️ 详细配置
+
+更多部署选项和高级配置请查看：[📖 完整部署指南](deploy/README.md)
 
 ## 📊 性能优化
 
@@ -265,8 +283,8 @@ chore: 构建过程或辅助工具的变动
 如有问题或建议，请通过以下方式联系：
 
 - 创建 [Issue](../../issues)
-- 发送邮件至: [your-email@example.com]
-- 项目主页: [项目地址]
+- 在 [GitHub](https://github.com/Kearney3/dati) 上参与讨论
+- 项目主页: [https://github.com/Kearney3/dati](https://github.com/Kearney3/dati)
 
 ---
 
