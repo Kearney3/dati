@@ -371,7 +371,16 @@ export const ReviewScreen = ({
                       : question.options
                     ).map((option, optIndex) => {
                       const letter = String.fromCharCode(65 + optIndex);
-                      const isUserSelected = userAnswer?.includes(letter);
+                      
+                      // 对于判断题，需要特殊处理用户选择的判断逻辑
+                      let isUserSelected = false;
+                      if (question.type === '判断题') {
+                        // 判断题：如果用户答案是A且当前选项索引是0（对应"对"），或用户答案是B且当前选项索引是1（对应"错"）
+                        isUserSelected = (userAnswer === 'A' && optIndex === 0) || (userAnswer === 'B' && optIndex === 1);
+                      } else {
+                        // 其他题型：使用原来的逻辑
+                        isUserSelected = userAnswer?.includes(letter) || false;
+                      }
                       
                       // 使用 checkAnswer 函数来正确处理判断题答案
                       const { correctAnswerText } = checkAnswer(question, null, settings);
