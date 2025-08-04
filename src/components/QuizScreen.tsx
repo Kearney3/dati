@@ -208,8 +208,8 @@ export const QuizScreen = ({
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="card p-6 mb-6">
-        <div className="flex flex-col space-y-4 mb-4">
+      <div className="card p-4 mb-6">
+        <div className="flex flex-col space-y-3">
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-8 relative">
             <div 
               className="bg-primary-600 dark:bg-primary-500 h-8 rounded-full transition-all duration-300"
@@ -220,7 +220,7 @@ export const QuizScreen = ({
             </span>
           </div>
           <div className="flex justify-center">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {settings.mode !== 'recite' && (
                 <button
                   onClick={handleHint}
@@ -231,6 +231,18 @@ export const QuizScreen = ({
                   <span className="hidden sm:inline">提示</span>
                 </button>
               )}
+              
+              {/* 快捷键提示 */}
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <HelpCircle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                <button
+                  onClick={() => setShowShortcuts(!showShortcuts)}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium"
+                >
+                  快捷键
+                </button>
+              </div>
+              
               <button
                 onClick={() => setShowNavPanel(true)}
                 className="btn btn-secondary text-sm px-3 py-2 flex items-center justify-center"
@@ -249,37 +261,11 @@ export const QuizScreen = ({
               </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Question */}
-      <div className="card p-6 mb-6">
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex-1">
-              {quizState.currentQuestionIndex + 1}. {currentQuestion.text}
-            </h2>
-            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium flex-shrink-0">
-              {currentQuestion.type}
-            </span>
-          </div>
-
-          {/* 快捷键提示 */}
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                <HelpCircle className="w-4 h-4" />
-                <span className="font-medium">快捷键提示</span>
-              </div>
-              <button
-                onClick={() => setShowShortcuts(!showShortcuts)}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 text-xs"
-              >
-                {showShortcuts ? '收起' : '展开'}
-              </button>
-            </div>
-            {showShortcuts && (
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs text-blue-600 dark:text-blue-400">
+          
+          {/* 展开的快捷键提示 */}
+          {showShortcuts && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs text-blue-600 dark:text-blue-400">
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">←</kbd>
                   <span>上一题</span>
@@ -305,7 +291,21 @@ export const QuizScreen = ({
                   <span>题目导航</span>
                 </div>
               </div>
-            )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Question */}
+      <div className="card p-6 mb-6">
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex-1">
+              {quizState.currentQuestionIndex + 1}. {currentQuestion.text}
+            </h2>
+            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium flex-shrink-0">
+              {currentQuestion.type}
+            </span>
           </div>
 
           {/* Options */}
