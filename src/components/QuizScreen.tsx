@@ -8,7 +8,8 @@ import {
   HelpCircle,
   Grid,
   AlertCircle,
-  Home
+  Home,
+  Newspaper
 } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { checkAnswer } from '../utils/quiz';
@@ -220,7 +221,7 @@ export const QuizScreen = ({
               className="bg-primary-600 dark:bg-primary-500 h-8 rounded-full transition-all duration-300"
               style={{ width: `${((quizState.currentQuestionIndex + 1) / questions.length) * 100}%` }}
             />
-            <span className="absolute inset-0 flex items-center justify-center text-white dark:text-white text-sm font-medium z-10">
+            <span className="absolute inset-0 flex items-center justify-center text-gray-700 dark:text-white text-sm font-medium z-10">
               {quizState.currentQuestionIndex + 1} / {questions.length}
             </span>
           </div>
@@ -458,37 +459,40 @@ export const QuizScreen = ({
       </div>
 
       {/* Navigation */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div className="flex flex-row items-center gap-2 sm:gap-4">
         <button
           onClick={handlePrev}
           disabled={quizState.currentQuestionIndex === 0}
-          className="btn btn-secondary text-sm px-3 py-2 w-full sm:w-auto"
+          className="btn btn-secondary text-sm px-2 sm:px-3 py-2 flex-1"
         >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          上一题
+          <ChevronLeft className="w-4 h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">上一题</span>
+          <span className="sm:hidden">上</span>
         </button>
         
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          {/* 提前交卷按钮 */}
-          <button 
-            onClick={handleEarlySubmit}
-            className="btn btn-warning text-sm px-3 py-2 w-full sm:w-auto"
-            title="提前交卷"
-          >
-            提前交卷
+        {/* 提前交卷按钮 */}
+        <button 
+          onClick={handleEarlySubmit}
+          className="btn btn-warning text-sm px-2 sm:px-3 py-2 flex-1"
+          title="提前交卷"
+        >
+          <Newspaper className="w-4 h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">提前交卷</span>
+          <span className="sm:hidden">交卷</span>
+        </button>
+        
+        {quizState.currentQuestionIndex < questions.length - 1 ? (
+          <button onClick={handleNext} className="btn btn-primary text-sm px-2 sm:px-3 py-2 flex-1">
+            <span className="hidden sm:inline">下一题</span>
+            <span className="sm:hidden">下</span>
+            <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
           </button>
-          
-          {quizState.currentQuestionIndex < questions.length - 1 ? (
-            <button onClick={handleNext} className="btn btn-primary text-sm px-3 py-2 w-full sm:w-auto">
-              下一题
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </button>
-          ) : (
-            <button onClick={handleSubmit} className="btn btn-success text-sm px-3 py-2 w-full sm:w-auto">
-              提交试卷
-            </button>
-          )}
-        </div>
+        ) : (
+          <button onClick={handleSubmit} className="btn btn-success text-sm px-2 sm:px-3 py-2 flex-1">
+            <span className="hidden sm:inline">提交试卷</span>
+            <span className="sm:hidden">提交</span>
+          </button>
+        )}
       </div>
 
       {/* Navigation Panel */}
