@@ -336,14 +336,6 @@ export default function App() {
                 <p className="text-lg text-gray-600 dark:text-gray-400">
                   {workbook ? '继续配置题库' : '上传您的Excel题库，开启个性化刷题之旅'}
                 </p>
-                {!workbook && (
-                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg max-w-md mx-auto">
-                    <div className="flex items-center justify-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span>🔒 文件仅在本机处理，保护您的隐私安全</span>
-                    </div>
-                  </div>
-                )}
               </div>
               {workbook ? (
                 <div className="text-center">
