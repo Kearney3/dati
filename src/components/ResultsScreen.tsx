@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, RefreshCw, ArrowLeft, Eye, CheckCircle, XCircle, Download } from 'lucide-react';
+import { Trophy, RefreshCw, ArrowLeft, Eye, CheckCircle, XCircle, Download, Home } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { getQuizStats, getExamStats, formatJudgmentAnswer, formatCorrectAnswer } from '../utils/quiz';
 import { exportToExcel, exportToHTML } from '../utils/export';
@@ -171,7 +171,7 @@ export const ResultsScreen = ({
           导出HTML
         </button>
         <button onClick={onBackToUpload} className="btn btn-secondary">
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <Home className="w-4 h-4 mr-2" />
           返回主页
         </button>
       </div>

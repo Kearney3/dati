@@ -7,7 +7,8 @@ import {
   ArrowLeft,
   HelpCircle,
   Grid,
-  AlertCircle
+  AlertCircle,
+  Home
 } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { checkAnswer } from '../utils/quiz';
@@ -230,7 +231,7 @@ export const QuizScreen = ({
               className="btn btn-danger"
               title="返回主页"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <Home className="w-4 h-4 mr-2" />
               返回主页
             </button>
           </div>
