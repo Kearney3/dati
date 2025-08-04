@@ -69,15 +69,11 @@ jobs:
       uses: actions/deploy-pages@v4
 
 
-  # 构建Docker镜像 (GitHub Container Registry)
+  # 构建Docker镜像 (Docker Hub)
   build-docker:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
-    permissions:
-      contents: read
-      packages: write
     
     steps:
     - name: Checkout code
@@ -86,12 +82,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
-    - name: Login to GitHub Container Registry
+    - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
         
     - name: Extract repository name
       id: repo-name
@@ -104,8 +99,8 @@ jobs:
         file: ./deploy/Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}:latest
-          ghcr.io/${{ github.repository }}:${{ github.sha }}
+          ${{ secrets.DOCKER_USERNAME }}/dati:latest
+          ${{ secrets.DOCKER_USERNAME }}/dati:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
