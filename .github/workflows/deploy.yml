@@ -85,6 +85,14 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
+    - name: Generate lowercase repository name
+      id: repo-name
+      run: |
+        # 将仓库名称转换为小写并替换特殊字符
+        REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+        echo "repo-name=$REPO_NAME" >> $GITHUB_OUTPUT
+        echo "Generated repository name: $REPO_NAME"
+        
     - name: Build and push Docker image to GHCR
       uses: docker/build-push-action@v5
       with:
@@ -92,8 +100,8 @@ jobs:
         file: ./deploy/Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}:latest
-          ghcr.io/${{ github.repository }}:${{ github.sha }}
+          ghcr.io/${{ steps.repo-name.outputs.repo-name }}:latest
+          ghcr.io/${{ steps.repo-name.outputs.repo-name }}:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
