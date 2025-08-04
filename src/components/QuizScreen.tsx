@@ -219,9 +219,12 @@ export const QuizScreen = ({
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-8 relative">
             <div 
               className="bg-primary-600 dark:bg-primary-500 h-8 rounded-full transition-all duration-300"
-              style={{ width: `${((quizState.currentQuestionIndex + 1) / questions.length) * 100}%` }}
+              style={{ 
+                width: `${((quizState.currentQuestionIndex + 1) / questions.length) * 100}%`,
+                minWidth: '2rem'
+              }}
             />
-            <span className="absolute inset-0 flex items-center justify-center text-gray-700 dark:text-white text-sm font-medium z-10">
+            <span className="absolute inset-0 flex items-center justify-center text-gray-700 dark:text-white text-xs sm:text-sm font-medium z-10 px-2">
               {quizState.currentQuestionIndex + 1} / {questions.length}
             </span>
           </div>
