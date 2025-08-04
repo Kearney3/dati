@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "dati-quiz-app",
+  "name": "dati",
   "builds": [
     {
       "src": "package.json",

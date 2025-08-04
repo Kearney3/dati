@@ -1,4 +1,4 @@
-# 智能答题系统
+# dati-智能答题系统
 
 一个现代化的智能答题系统，支持Excel文件导入，提供多种测验模式和完善的用户体验。
 
@@ -39,7 +39,7 @@
 ```bash
 # 克隆项目
 git clone <repository-url>
-cd dati_v2
+cd dati
 
 # 安装依赖
 npm install
@@ -63,7 +63,7 @@ npm run preview
 ## 📁 项目结构
 
 ```
-dati_v2/
+dati/
 ├── src/                    # 源代码
 │   ├── components/         # React组件
 │   │   ├── FileUpload.tsx      # 文件上传
@@ -216,8 +216,8 @@ netlify deploy --prod --dir=dist
 #### Docker 部署
 ```bash
 # 使用Docker
-docker build -f deploy/Dockerfile -t dati-quiz-app .
-docker run -d -p 5080:5080 dati-quiz-app
+docker build -f deploy/Dockerfile -t dati .
+docker run -d -p 5080:5080 dati
 
 # 使用Docker Compose
 cd deploy && docker-compose up -d

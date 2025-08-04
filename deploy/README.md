@@ -58,10 +58,10 @@ netlify deploy --prod --dir=dist
 
 ```bash
 # 构建镜像
-docker build -f deploy/Dockerfile -t dati-quiz-app .
+docker build -f deploy/Dockerfile -t dati .
 
 # 运行容器
-docker run -d -p 5080:5080 --name dati-quiz dati-quiz-app
+docker run -d -p 5080:5080 --name dati dati
 ```
 
 **使用 Docker Compose：**
@@ -196,7 +196,7 @@ npm install
 
 **Docker：**
 ```bash
-docker logs dati-quiz
+docker logs dati
 ```
 
 **Vercel：**
