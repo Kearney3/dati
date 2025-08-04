@@ -90,6 +90,12 @@ export const FileUpload = ({ onFileLoaded }: FileUploadProps) => {
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
               支持 .xlsx 和 .xls 格式
             </p>
+            <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-center gap-2 text-sm text-green-700 dark:text-green-300">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>🔒 隐私保护：文件仅在本机处理，不会上传到服务器</span>
+              </div>
+            </div>
           </div>
 
           {fileName && (
