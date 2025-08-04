@@ -26,39 +26,6 @@ import {
 import { generateQuizData, calculateResults } from './utils/quiz';
 import { loadExamConfig, saveExamConfig } from './utils/storage';
 
-// 自定义hook：检测是否应该显示footer
-const useFooterVisibility = () => {
-  const [shouldShowFooter, setShouldShowFooter] = useState(false);
-
-  useEffect(() => {
-    const checkFooterVisibility = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      
-      // 如果内容高度小于等于窗口高度，或者用户滚动到底部，则显示footer
-      const isAtBottom = scrollTop + windowHeight >= documentHeight - 10; // 10px tolerance
-      const isContentShort = documentHeight <= windowHeight;
-      
-      setShouldShowFooter(isAtBottom || isContentShort);
-    };
-
-    // 初始检查
-    checkFooterVisibility();
-    
-    // 监听滚动事件
-    window.addEventListener('scroll', checkFooterVisibility);
-    window.addEventListener('resize', checkFooterVisibility);
-    
-    return () => {
-      window.removeEventListener('scroll', checkFooterVisibility);
-      window.removeEventListener('resize', checkFooterVisibility);
-    };
-  }, []);
-
-  return shouldShowFooter;
-};
-
 type Screen = 'upload' | 'config' | 'quiz' | 'results' | 'review';
 
 export default function App() {
@@ -101,9 +68,6 @@ export default function App() {
     description?: string;
     duration?: number;
   }>>([]);
-
-  // 使用自定义hook检测footer显示
-  const shouldShowFooter = useFooterVisibility();
 
   // 显示提示信息的函数
   const showAlert = (type: 'success' | 'warning' | 'error' | 'info', title: string, description?: string, duration = 5000) => {
@@ -248,10 +212,6 @@ export default function App() {
     }));
   };
 
-
-
-
-
   const handleStartQuiz = () => {
     const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
     
@@ -359,203 +319,203 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <ThemeToggle />
       
-      <div className="container mx-auto px-4 py-8 flex-1">
-        {/* 提示信息Toast */}
-        <ToastContainer
-          toasts={toasts}
-          onRemoveToast={removeToast}
-        />
+      <main className="flex-1">
+        <div className="container mx-auto px-4 py-8">
+          {/* 提示信息Toast */}
+          <ToastContainer
+            toasts={toasts}
+            onRemoveToast={removeToast}
+          />
 
-        {currentScreen === 'upload' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                智能答题系统
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                {workbook ? '继续配置题库' : '上传您的Excel题库，开启个性化刷题之旅'}
-              </p>
-            </div>
-            {workbook ? (
-              <div className="text-center">
-                <div className="card p-8 mb-6">
-                  <div className="mb-4">
-                    <div className="text-4xl mb-4">📊</div>
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                      已上传题库文件
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      包含 {sheetNames.length} 个工作表
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setCurrentScreen('config')}
-                    className="btn btn-primary"
-                  >
-                    继续配置
-                  </button>
-                </div>
-                <button
-                  onClick={() => {
-                    setWorkbook(null);
-                    setSheetNames([]);
-                    setHeaders([]);
-                    setMapping({});
-                    setQuestions([]);
-                    setMultiSheetConfig({
-                      sheets: [],
-                      globalMapping: {},
-                      useGlobalMapping: false
-                    });
-                  }}
-                  className="btn btn-secondary"
-                >
-                  重新上传文件
-                </button>
-              </div>
-            ) : (
-              <FileUpload onFileLoaded={handleFileLoaded} />
-            )}
-          </div>
-        )}
-
-        {currentScreen === 'config' && (
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* 返回首页按钮 */}
-            <div className="flex justify-between items-center">
-              <button
-                onClick={handleBackToUpload}
-                className="btn btn-secondary flex items-center gap-2"
-              >
-                <Home className="w-4 h-4" />
-                返回首页
-              </button>
-              <div className="text-center flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  配置题库
+          {currentScreen === 'upload' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                  智能答题系统
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  选择工作表并配置全局映射
+                <p className="text-lg text-gray-600 dark:text-gray-400">
+                  {workbook ? '继续配置题库' : '上传您的Excel题库，开启个性化刷题之旅'}
                 </p>
               </div>
-              <div className="w-24"></div> {/* 占位，保持标题居中 */}
+              {workbook ? (
+                <div className="text-center">
+                  <div className="card p-8 mb-6">
+                    <div className="mb-4">
+                      <div className="text-4xl mb-4">📊</div>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        已上传题库文件
+                      </h2>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        包含 {sheetNames.length} 个工作表
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setCurrentScreen('config')}
+                      className="btn btn-primary"
+                    >
+                      继续配置
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setWorkbook(null);
+                      setSheetNames([]);
+                      setHeaders([]);
+                      setMapping({});
+                      setQuestions([]);
+                      setMultiSheetConfig({
+                        sheets: [],
+                        globalMapping: {},
+                        useGlobalMapping: false
+                      });
+                    }}
+                    className="btn btn-secondary"
+                  >
+                    重新上传文件
+                  </button>
+                </div>
+              ) : (
+                <FileUpload onFileLoaded={handleFileLoaded} />
+              )}
             </div>
+          )}
 
-            {/* 工作表选择 */}
-            <div className="card p-6">
-              <SheetSelector
-                sheetNames={sheetNames}
-                multiSheetConfig={multiSheetConfig}
-                onMultiSheetConfigChange={handleMultiSheetConfigChange}
-                workbook={workbook}
-              />
-            </div>
-
-            {/* 表头映射 */}
-            {multiSheetConfig.sheets.some(sheet => sheet.isSelected) && (
-              <div className="card p-6">
-                <HeaderMapping
-                  headers={headers}
-                  mapping={mapping}
-                  onMappingChange={handleMappingChange}
-                  sheetName="全局映射"
-                />
-              </div>
-            )}
-
-            {/* 答题设置 */}
-            {multiSheetConfig.sheets.some(sheet => sheet.isSelected) && (
-              <div className="card p-6">
-                <QuizSettings
-                  settings={settings}
-                  onSettingsChange={setSettings}
-                  questionTypes={questions.map(q => q.type)}
-                  onExamSettingsChange={handleExamSettingsChange}
-                  totalQuestions={questions.length}
-                  selectedSheets={multiSheetConfig.sheets.filter(sheet => sheet.isSelected)}
-                  questions={questions}
-                />
-              </div>
-            )}
-
-            {/* 开始按钮 */}
-            {multiSheetConfig.sheets.some(sheet => sheet.isSelected) && (
-              <div className="text-center">
+          {currentScreen === 'config' && (
+            <div className="max-w-4xl mx-auto space-y-8">
+              {/* 返回首页按钮 */}
+              <div className="flex justify-between items-center">
                 <button
-                  onClick={handleStartQuiz}
-                  className="btn btn-primary text-lg px-8 py-3"
+                  onClick={handleBackToUpload}
+                  className="btn btn-secondary flex items-center gap-2"
                 >
-                  开始答题
+                  <Home className="w-4 h-4" />
+                  返回首页
                 </button>
+                <div className="text-center flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    配置题库
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    选择工作表并配置全局映射
+                  </p>
+                </div>
+                <div className="w-24"></div> {/* 占位，保持标题居中 */}
               </div>
-            )}
-          </div>
-        )}
 
-        {currentScreen === 'quiz' && (
-          <QuizScreen
-            questions={quizQuestions}
-            settings={settings}
-            quizState={quizState}
-            onQuizStateChange={setQuizState}
-            onComplete={handleQuizComplete}
-            onExit={handleBackToUpload}
-          />
-        )}
+              {/* 工作表选择 */}
+              <div className="card p-6">
+                <SheetSelector
+                  sheetNames={sheetNames}
+                  multiSheetConfig={multiSheetConfig}
+                  onMultiSheetConfigChange={handleMultiSheetConfigChange}
+                  workbook={workbook}
+                />
+              </div>
 
-        {currentScreen === 'results' && (
-          <ResultsScreen
-            questions={quizQuestions}
-            results={quizState.questionResults}
-            settings={settings}
-            examSettings={examSettings}
-            onRetry={handleRetry}
-            onReview={() => setCurrentScreen('review')}
-            onBackToUpload={handleBackToUpload}
-            onBackToQuiz={() => setCurrentScreen('quiz')}
-          />
-        )}
+              {/* 表头映射 */}
+              {multiSheetConfig.sheets.some(sheet => sheet.isSelected) && (
+                <div className="card p-6">
+                  <HeaderMapping
+                    headers={headers}
+                    mapping={mapping}
+                    onMappingChange={handleMappingChange}
+                    sheetName="全局映射"
+                  />
+                </div>
+              )}
 
-        {currentScreen === 'review' && (
-          <ReviewScreen
-            questions={quizQuestions}
-            results={quizState.questionResults}
-            userAnswers={quizState.userAnswers}
-            settings={settings}
-            onBack={() => setCurrentScreen('results')}
-            onBackToUpload={handleBackToUpload}
-          />
-        )}
-      </div>
+              {/* 答题设置 */}
+              {multiSheetConfig.sheets.some(sheet => sheet.isSelected) && (
+                <div className="card p-6">
+                  <QuizSettings
+                    settings={settings}
+                    onSettingsChange={setSettings}
+                    questionTypes={questions.map(q => q.type)}
+                    onExamSettingsChange={handleExamSettingsChange}
+                    totalQuestions={questions.length}
+                    selectedSheets={multiSheetConfig.sheets.filter(sheet => sheet.isSelected)}
+                    questions={questions}
+                  />
+                </div>
+              )}
+
+              {/* 开始按钮 */}
+              {multiSheetConfig.sheets.some(sheet => sheet.isSelected) && (
+                <div className="text-center">
+                  <button
+                    onClick={handleStartQuiz}
+                    className="btn btn-primary text-lg px-8 py-3"
+                  >
+                    开始答题
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentScreen === 'quiz' && (
+            <QuizScreen
+              questions={quizQuestions}
+              settings={settings}
+              quizState={quizState}
+              onQuizStateChange={setQuizState}
+              onComplete={handleQuizComplete}
+              onExit={handleBackToUpload}
+            />
+          )}
+
+          {currentScreen === 'results' && (
+            <ResultsScreen
+              questions={quizQuestions}
+              results={quizState.questionResults}
+              settings={settings}
+              examSettings={examSettings}
+              onRetry={handleRetry}
+              onReview={() => setCurrentScreen('review')}
+              onBackToUpload={handleBackToUpload}
+              onBackToQuiz={() => setCurrentScreen('quiz')}
+            />
+          )}
+
+          {currentScreen === 'review' && (
+            <ReviewScreen
+              questions={quizQuestions}
+              results={quizState.questionResults}
+              userAnswers={quizState.userAnswers}
+              settings={settings}
+              onBack={() => setCurrentScreen('results')}
+              onBackToUpload={handleBackToUpload}
+            />
+          )}
+        </div>
+      </main>
       
-      {/* GitHub链接 */}
-      {shouldShowFooter && currentScreen !== 'review' && (
-        <footer className="mt-auto py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 transition-opacity duration-300">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6">
-              <span className="text-gray-600 dark:text-gray-400 text-sm">
-                © 2024 dati - 支持Excel文件导入的多功能测验应用
+      {/* Footer - 始终显示 */}
+      <footer className="py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6">
+            <span className="text-gray-600 dark:text-gray-400 text-sm">
+              © 2024 dati - 支持Excel文件导入的多功能测验应用
+            </span>
+            <div className="flex items-center space-x-4">
+              <a
+                href="https://github.com/Kearney3/dati"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 group"
+                title="查看项目源码"
+              >
+                <Github className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                <span className="text-sm font-medium">GitHub</span>
+              </a>
+              <span className="text-gray-400 dark:text-gray-500">|</span>
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
+                Made with ❤️
               </span>
-              <div className="flex items-center space-x-4">
-                <a
-                  href="https://github.com/Kearney3/dati"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 group"
-                  title="查看项目源码"
-                >
-                  <Github className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-sm font-medium">GitHub</span>
-                </a>
-                <span className="text-gray-400 dark:text-gray-500">|</span>
-                <span className="text-gray-500 dark:text-gray-400 text-xs">
-                  Made with ❤️
-                </span>
-              </div>
             </div>
           </div>
-        </footer>
-      )}
+        </div>
+      </footer>
     </div>
   );
 } 

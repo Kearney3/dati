@@ -144,7 +144,7 @@ export const ReviewScreen = ({
   return (
     <div className="max-w-4xl mx-auto relative">
       {/* Scroll buttons - floating at bottom-right corner */}
-      <div className="fixed right-4 bottom-4 z-50">
+      <div className="fixed right-4 bottom-20 sm:bottom-4 z-50">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 space-y-1">
           {showScrollTop && (
             <button
@@ -319,7 +319,7 @@ export const ReviewScreen = ({
       </div>
 
       {/* Questions */}
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 sm:pb-8">
         {currentQuestions.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400">
@@ -474,14 +474,14 @@ export const ReviewScreen = ({
 
       {/* Pagination Controls - Fixed at bottom */}
       {totalPages > 1 && (
-        <div className="fixed left-1/2 transform -translate-x-1/2 z-40 bottom-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3">
-            <div className="flex items-center justify-center space-x-2">
+        <div className="fixed left-1/2 transform -translate-x-1/2 z-40 bottom-4 sm:bottom-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3 max-w-xs sm:max-w-none overflow-x-auto">
+            <div className="flex items-center justify-center space-x-1 sm:space-x-2">
               {/* First Page Button */}
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="第一页"
               >
                 <ChevronsLeft className="w-4 h-4" />
@@ -491,7 +491,7 @@ export const ReviewScreen = ({
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -514,7 +514,7 @@ export const ReviewScreen = ({
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      className={`px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         currentPage === pageNum
                           ? 'bg-primary-600 text-white'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -530,7 +530,7 @@ export const ReviewScreen = ({
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -539,7 +539,7 @@ export const ReviewScreen = ({
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="最后一页"
               >
                 <ChevronsRight className="w-4 h-4" />

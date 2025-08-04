@@ -195,45 +195,45 @@ export const QuizScreen = ({
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="card p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-4">
-            <span className="text-lg font-medium text-gray-700 dark:text-gray-300">
-              进度: {quizState.currentQuestionIndex + 1} / {questions.length}
+        <div className="flex flex-col space-y-4 mb-4">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-8 relative">
+            <div 
+              className="bg-primary-600 dark:bg-primary-500 h-8 rounded-full transition-all duration-300"
+              style={{ width: `${((quizState.currentQuestionIndex + 1) / questions.length) * 100}%` }}
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-white dark:text-white text-sm font-medium z-10">
+              {quizState.currentQuestionIndex + 1} / {questions.length}
             </span>
-            <div className="w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${((quizState.currentQuestionIndex + 1) / questions.length) * 100}%` }}
-              />
-            </div>
           </div>
-          <div className="flex space-x-2">
-            {settings.mode !== 'recite' && (
+          <div className="flex justify-center">
+            <div className="flex flex-wrap gap-2">
+              {settings.mode !== 'recite' && (
+                <button
+                  onClick={handleHint}
+                  className="btn btn-warning text-sm px-3 py-2 flex items-center justify-center"
+                  title="提示答案"
+                >
+                  <HelpCircle className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">提示</span>
+                </button>
+              )}
               <button
-                onClick={handleHint}
-                className="btn btn-warning"
-                title="提示答案"
+                onClick={() => setShowNavPanel(true)}
+                className="btn btn-secondary text-sm px-3 py-2 flex items-center justify-center"
+                title="题号导航"
               >
-                <HelpCircle className="w-4 h-4 mr-2" />
-                提示
+                <Grid className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">导航</span>
               </button>
-            )}
-            <button
-              onClick={() => setShowNavPanel(true)}
-              className="btn btn-secondary"
-              title="题号导航"
-            >
-              <Grid className="w-4 h-4 mr-2" />
-              导航
-            </button>
-            <button
-              onClick={onExit}
-              className="btn btn-danger"
-              title="返回主页"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              返回主页
-            </button>
+              <button
+                onClick={onExit}
+                className="btn btn-danger text-sm px-3 py-2 flex items-center justify-center"
+                title="返回主页"
+              >
+                <Home className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">返回主页</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -241,11 +241,11 @@ export const QuizScreen = ({
       {/* Question */}
       <div className="card p-6 mb-6">
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex-1">
               {quizState.currentQuestionIndex + 1}. {currentQuestion.text}
             </h2>
-            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium flex-shrink-0">
               {currentQuestion.type}
             </span>
           </div>
@@ -324,7 +324,7 @@ export const QuizScreen = ({
                         )
                       )}
                     </span>
-                    <span className="text-gray-900 dark:text-white">
+                    <span className="text-gray-900 dark:text-white flex items-center">
                       {letter}. {option}
                       {isCorrectAnswer && settings.mode === 'recite' && (
                         <span className="ml-2 text-success-600 dark:text-success-400 text-sm font-medium">
@@ -396,33 +396,33 @@ export const QuizScreen = ({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <button
           onClick={handlePrev}
           disabled={quizState.currentQuestionIndex === 0}
-          className="btn btn-secondary"
+          className="btn btn-secondary w-full sm:w-auto"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           上一题
         </button>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
           {/* 提前交卷按钮 */}
           <button 
             onClick={handleEarlySubmit}
-            className="btn btn-warning text-sm px-4 py-2"
+            className="btn btn-warning text-sm px-4 py-2 w-full sm:w-auto"
             title="提前交卷"
           >
             提前交卷
           </button>
           
           {quizState.currentQuestionIndex < questions.length - 1 ? (
-            <button onClick={handleNext} className="btn btn-primary">
+            <button onClick={handleNext} className="btn btn-primary w-full sm:w-auto">
               下一题
               <ChevronRight className="w-4 h-4 ml-2" />
             </button>
           ) : (
-            <button onClick={handleSubmit} className="btn btn-success">
+            <button onClick={handleSubmit} className="btn btn-success w-full sm:w-auto">
               提交试卷
             </button>
           )}
@@ -444,7 +444,7 @@ export const QuizScreen = ({
                 <ArrowLeft className="w-5 h-5" />
               </button>
             </div>
-            <div className="grid grid-cols-8 gap-2">
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
               {questions.map((_, index) => (
                 <button
                   key={index}
@@ -452,7 +452,7 @@ export const QuizScreen = ({
                     onQuizStateChange({ ...quizState, currentQuestionIndex: index });
                     setShowNavPanel(false);
                   }}
-                  className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`p-2 sm:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                     index === quizState.currentQuestionIndex
                       ? 'bg-primary-600 text-white'
                       : quizState.userAnswers[index]
