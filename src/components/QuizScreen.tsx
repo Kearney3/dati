@@ -39,6 +39,7 @@ export const QuizScreen = ({
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackData, setFeedbackData] = useState<any>(null);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
@@ -175,6 +176,19 @@ export const QuizScreen = ({
             }
           }
           break;
+        case ' ':
+          e.preventDefault();
+          // 空格键：提示答案（仅在非背诵模式下）
+          if (settings.mode !== 'recite') {
+            handleHint();
+          }
+          break;
+        case 'n':
+        case 'N':
+          e.preventDefault();
+          // N键：打开题目导航
+          setShowNavPanel(true);
+          break;
         default:
           // 处理选项键
           const mapping = keyMappings.find(m => m.keys.includes(e.key));
@@ -248,6 +262,50 @@ export const QuizScreen = ({
             <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium flex-shrink-0">
               {currentQuestion.type}
             </span>
+          </div>
+
+          {/* 快捷键提示 */}
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                <HelpCircle className="w-4 h-4" />
+                <span className="font-medium">快捷键提示</span>
+              </div>
+              <button
+                onClick={() => setShowShortcuts(!showShortcuts)}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 text-xs"
+              >
+                {showShortcuts ? '收起' : '展开'}
+              </button>
+            </div>
+            {showShortcuts && (
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs text-blue-600 dark:text-blue-400">
+                <div className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">←</kbd>
+                  <span>上一题</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">→</kbd>
+                  <span>下一题</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">A-F</kbd>
+                  <span>选择答案</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">1-6</kbd>
+                  <span>数字选择</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">空格</kbd>
+                  <span>提示答案</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">N</kbd>
+                  <span>题目导航</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Options */}
