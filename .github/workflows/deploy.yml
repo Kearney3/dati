@@ -68,11 +68,40 @@ jobs:
       id: deployment
       uses: actions/deploy-pages@v4
 
-  # 构建Docker镜像
-  build-docker:
+  # 构建Docker镜像 (GitHub Container Registry)
+  build-docker-ghcr:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build and push Docker image to GHCR
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./deploy/Dockerfile
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}:latest
+          ghcr.io/${{ github.repository }}:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # 构建Docker镜像 (Docker Hub)
+  build-docker:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && false  # 临时禁用
     
     steps:
     - name: Checkout code
