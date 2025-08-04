@@ -41,6 +41,12 @@ export const QuizScreen = ({
   const [feedbackData, setFeedbackData] = useState<any>(null);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  
+  // 滑动状态
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [swipeDistance, setSwipeDistance] = useState(0);
 
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
@@ -99,6 +105,127 @@ export const QuizScreen = ({
     const result = checkAnswer(currentQuestion, currentAnswer, settings);
     setFeedbackData(result);
     setShowFeedback(true);
+  };
+
+  // 触摸滑动处理函数
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    setSwipeDirection(null);
+    setSwipeDistance(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+    
+    if (touchStart) {
+      const distance = touchStart - e.targetTouches[0].clientX;
+      setSwipeDistance(Math.abs(distance));
+      
+      if (distance > 10) {
+        setSwipeDirection('left');
+      } else if (distance < -10) {
+        setSwipeDirection('right');
+      } else {
+        setSwipeDirection(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    // 填空题时禁用滑动切换功能
+    if (currentQuestion.type === '填空题') return;
+
+    if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
+      // 向左滑动，下一题
+      setSwipeDirection('left');
+      setTimeout(() => {
+        handleNext();
+        setSwipeDirection(null);
+        setSwipeDistance(0);
+      }, 150);
+    } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
+      // 向右滑动，上一题
+      setSwipeDirection('right');
+      setTimeout(() => {
+        handlePrev();
+        setSwipeDirection(null);
+        setSwipeDistance(0);
+      }, 150);
+    } else {
+      setSwipeDirection(null);
+      setSwipeDistance(0);
+    }
+  };
+
+  // 鼠标拖拽处理函数（用于电脑测试）
+  const [mouseStart, setMouseStart] = useState<number | null>(null);
+  const [mouseEnd, setMouseEnd] = useState<number | null>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setMouseEnd(null);
+    setMouseStart(e.clientX);
+    setSwipeDirection(null);
+    setSwipeDistance(0);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (mouseStart !== null) {
+      setMouseEnd(e.clientX);
+      
+      const distance = mouseStart - e.clientX;
+      setSwipeDistance(Math.abs(distance));
+      
+      if (distance > 10) {
+        setSwipeDirection('left');
+      } else if (distance < -10) {
+        setSwipeDirection('right');
+      } else {
+        setSwipeDirection(null);
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!mouseStart || !mouseEnd) return;
+    
+    const distance = mouseStart - mouseEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    // 填空题时禁用滑动切换功能
+    if (currentQuestion.type === '填空题') return;
+
+    if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
+      // 向左滑动，下一题
+      setSwipeDirection('left');
+      setTimeout(() => {
+        handleNext();
+        setSwipeDirection(null);
+        setSwipeDistance(0);
+      }, 150);
+    } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
+      // 向右滑动，上一题
+      setSwipeDirection('right');
+      setTimeout(() => {
+        handlePrev();
+        setSwipeDirection(null);
+        setSwipeDistance(0);
+      }, 150);
+    } else {
+      setSwipeDirection(null);
+      setSwipeDistance(0);
+    }
+    
+    // 重置状态
+    setMouseStart(null);
+    setMouseEnd(null);
   };
 
   // Show immediate feedback in recite mode
@@ -305,7 +432,39 @@ export const QuizScreen = ({
       </div>
 
       {/* Question */}
-      <div className="card p-6 mb-6">
+      <div 
+        className="card p-6 mb-6 relative overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        style={{ userSelect: 'none' }}
+      >
+        {/* 滑动指示器 */}
+        {swipeDirection && (
+          <div className={`absolute inset-0 flex items-center justify-center z-50 pointer-events-none transition-all duration-200 ${
+            swipeDirection === 'left' ? 'bg-blue-500/20' : 'bg-green-500/20'
+          }`}>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 dark:bg-gray-800/90 shadow-lg ${
+              swipeDirection === 'left' ? 'text-blue-600' : 'text-green-600'
+            }`}>
+              {swipeDirection === 'left' ? (
+                <>
+                  <ChevronRight className="w-5 h-5" />
+                  <span className="font-medium">下一题</span>
+                </>
+              ) : (
+                <>
+                  <ChevronLeft className="w-5 h-5" />
+                  <span className="font-medium">上一题</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex-1">
