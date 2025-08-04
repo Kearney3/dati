@@ -189,6 +189,11 @@ export const QuizScreen = ({
           // N键：打开题目导航
           setShowNavPanel(true);
           break;
+        case 'Escape':
+          e.preventDefault();
+          // ESC键：关闭导航面板
+          setShowNavPanel(false);
+          break;
         default:
           // 处理选项键
           const mapping = keyMappings.find(m => m.keys.includes(e.key));
@@ -233,15 +238,14 @@ export const QuizScreen = ({
               )}
               
               {/* 快捷键提示 */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <HelpCircle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                <button
-                  onClick={() => setShowShortcuts(!showShortcuts)}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium"
-                >
-                  快捷键
-                </button>
-              </div>
+              <button
+                onClick={() => setShowShortcuts(!showShortcuts)}
+                className="btn btn-info text-sm px-3 py-2 flex items-center justify-center"
+                title="快捷键提示"
+              >
+                <HelpCircle className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">快捷键</span>
+              </button>
               
               <button
                 onClick={() => setShowNavPanel(true)}
@@ -280,7 +284,7 @@ export const QuizScreen = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">1-6</kbd>
-                  <span>数字选择</span>
+                  <span>选择答案（对应A-F）</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">空格</kbd>
@@ -458,7 +462,7 @@ export const QuizScreen = ({
         <button
           onClick={handlePrev}
           disabled={quizState.currentQuestionIndex === 0}
-          className="btn btn-secondary w-full sm:w-auto"
+          className="btn btn-secondary text-sm px-3 py-2 w-full sm:w-auto"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           上一题
@@ -468,19 +472,19 @@ export const QuizScreen = ({
           {/* 提前交卷按钮 */}
           <button 
             onClick={handleEarlySubmit}
-            className="btn btn-warning text-sm px-4 py-2 w-full sm:w-auto"
+            className="btn btn-warning text-sm px-3 py-2 w-full sm:w-auto"
             title="提前交卷"
           >
             提前交卷
           </button>
           
           {quizState.currentQuestionIndex < questions.length - 1 ? (
-            <button onClick={handleNext} className="btn btn-primary w-full sm:w-auto">
+            <button onClick={handleNext} className="btn btn-primary text-sm px-3 py-2 w-full sm:w-auto">
               下一题
               <ChevronRight className="w-4 h-4 ml-2" />
             </button>
           ) : (
-            <button onClick={handleSubmit} className="btn btn-success w-full sm:w-auto">
+            <button onClick={handleSubmit} className="btn btn-success text-sm px-3 py-2 w-full sm:w-auto">
               提交试卷
             </button>
           )}
@@ -489,7 +493,15 @@ export const QuizScreen = ({
 
       {/* Navigation Panel */}
       {showNavPanel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            // 点击背景关闭面板
+            if (e.target === e.currentTarget) {
+              setShowNavPanel(false);
+            }
+          }}
+        >
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -498,6 +510,7 @@ export const QuizScreen = ({
               <button
                 onClick={() => setShowNavPanel(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                title="关闭导航"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
