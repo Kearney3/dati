@@ -11,7 +11,17 @@
   "bugs": {
     "url": "https://github.com/Kearney3/dati/issues"
   },
-  "keywords": ["quiz", "exam", "excel", "education", "react", "typescript", "答题系统", "考试", "测验"],
+  "keywords": [
+    "quiz",
+    "exam",
+    "excel",
+    "education",
+    "react",
+    "typescript",
+    "答题系统",
+    "考试",
+    "测验"
+  ],
   "author": "Kearney",
   "license": "MIT",
   "scripts": {
@@ -30,6 +40,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/node": "^24.1.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
