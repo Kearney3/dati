@@ -2,6 +2,8 @@
 
 一个现代化的智能答题系统，支持Excel文件导入，提供多种测验模式和完善的用户体验。
 
+[👉 在线体验地址（Demo）](https://kearney3.github.io/dati/)
+
 ## ✨ 功能特性
 
 ### 📊 Excel文件支持
