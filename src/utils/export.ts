@@ -75,7 +75,7 @@ const createQuizSummarySheet = (data: ExportData) => {
     ['答对题目', data.stats.correct],
     ['答错题目', data.stats.incorrect],
     ['正确率', `${data.stats.accuracy}%`],
-    ...(data.stats.totalScore !== undefined ? [['得分', `${data.stats.totalScore}/${data.stats.maxScore}`]] : []),
+    ...(data.stats.totalScore !== undefined ? [['得分', `${Number(data.stats.totalScore).toFixed(1)}/${Number(data.stats.maxScore).toFixed(1)}`]] : []),
     [''],
     ['题型统计'],
     ['题型', '题目数量', '答对数量', '正确率']
@@ -233,7 +233,7 @@ export const exportToHTML = (data: ExportData) => {
         </div>
         ${data.stats.totalScore !== undefined ? `
         <div class="stat-card">
-            <div class="stat-value">${data.stats.totalScore}/${data.stats.maxScore}</div>
+            <div class="stat-value">${Number(data.stats.totalScore).toFixed(1)}/${Number(data.stats.maxScore).toFixed(1)}</div>
             <div class="stat-label">得分/满分</div>
         </div>
         ` : ''}

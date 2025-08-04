@@ -239,13 +239,23 @@ export const getExamStats = (results: QuestionResult[], examSettings: ExamSettin
     }
   });
   
+  // 格式化分数，避免浮点数精度问题导致的小数过长
+  const formatScore = (score: number) => {
+    // 如果是整数，直接返回
+    if (Number.isInteger(score)) {
+      return score;
+    }
+    // 如果是小数，保留最多2位小数，并去除末尾的0
+    return parseFloat(score.toFixed(2));
+  };
+  
   return {
     total,
     correct,
     incorrect: total - correct,
     accuracy: Math.round(accuracy * 10) / 10,
-    totalScore,
-    maxScore // 使用实际出题的总分，而不是配置的总分
+    totalScore: formatScore(totalScore),
+    maxScore: formatScore(maxScore) // 使用实际出题的总分，而不是配置的总分
   };
 };
 

@@ -72,7 +72,7 @@ export const ResultsScreen = ({
           </div>
           <div>
             <div className="text-4xl font-bold text-success-600 dark:text-success-400 mb-2">
-              {settings.mode === 'exam' ? `${stats.totalScore}/${stats.maxScore}` : `${stats.accuracy}%`}
+              {settings.mode === 'exam' ? `${Number(stats.totalScore).toFixed(1)}/${Number(stats.maxScore).toFixed(1)}` : `${stats.accuracy}%`}
             </div>
             <div className="text-gray-600 dark:text-gray-400">
               {settings.mode === 'exam' ? '得分/满分' : '正确率'}

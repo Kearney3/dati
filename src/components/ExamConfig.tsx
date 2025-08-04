@@ -267,7 +267,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
     return {
       status: 'success',
       message: '配置有效',
-      description: `已配置 ${totalConfiguredQuestions} 题，满分 ${configs.reduce((sum, config) => sum + (config.count * config.score), 0)} 分`,
+      description: `已配置 ${totalConfiguredQuestions} 题，满分 ${parseFloat(configs.reduce((sum, config) => sum + (config.count * config.score), 0).toFixed(1))} 分`,
       color: 'success'
     };
   };
