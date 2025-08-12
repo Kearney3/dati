@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
   CheckCircle, 
   XCircle, 
-  ArrowLeft,
   HelpCircle,
   Grid,
   AlertCircle,
@@ -49,8 +48,11 @@ export const QuizScreen = ({
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
-  const [swipeDistance, setSwipeDistance] = useState(0);
-
+  const [isWheelProcessing, setIsWheelProcessing] = useState(false);
+  const wheelIdleTimerRef = useRef<number | null>(null);
+  const prevButtonRef = useRef<HTMLButtonElement | null>(null);
+  const nextButtonRef = useRef<HTMLButtonElement | null>(null);
+  
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
 
@@ -121,7 +123,6 @@ export const QuizScreen = ({
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
     setSwipeDirection(null);
-    setSwipeDistance(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -129,7 +130,6 @@ export const QuizScreen = ({
     
     if (touchStart) {
       const distance = touchStart - e.targetTouches[0].clientX;
-      setSwipeDistance(Math.abs(distance));
       
       if (distance > 10) {
         setSwipeDirection('left');
@@ -157,7 +157,6 @@ export const QuizScreen = ({
       setTimeout(() => {
         handleNext();
         setSwipeDirection(null);
-        setSwipeDistance(0);
       }, 150);
     } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
       // 向右滑动，上一题
@@ -165,11 +164,9 @@ export const QuizScreen = ({
       setTimeout(() => {
         handlePrev();
         setSwipeDirection(null);
-        setSwipeDistance(0);
       }, 150);
     } else {
       setSwipeDirection(null);
-      setSwipeDistance(0);
     }
   };
 
@@ -181,7 +178,6 @@ export const QuizScreen = ({
     setMouseEnd(null);
     setMouseStart(e.clientX);
     setSwipeDirection(null);
-    setSwipeDistance(0);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -189,7 +185,6 @@ export const QuizScreen = ({
       setMouseEnd(e.clientX);
       
       const distance = mouseStart - e.clientX;
-      setSwipeDistance(Math.abs(distance));
       
       if (distance > 10) {
         setSwipeDirection('left');
@@ -217,7 +212,6 @@ export const QuizScreen = ({
       setTimeout(() => {
         handleNext();
         setSwipeDirection(null);
-        setSwipeDistance(0);
       }, 150);
     } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
       // 向右滑动，上一题
@@ -225,16 +219,56 @@ export const QuizScreen = ({
       setTimeout(() => {
         handlePrev();
         setSwipeDirection(null);
-        setSwipeDistance(0);
       }, 150);
     } else {
       setSwipeDirection(null);
-      setSwipeDistance(0);
     }
     
     // 重置状态
     setMouseStart(null);
     setMouseEnd(null);
+  };
+
+  // 滚动切换题目处理函数
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+    // 填空题时禁用滚动切换功能
+    if (currentQuestion.type === '填空题') return;
+
+    // 防止在输入框内滚动时触发题目切换
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+    // 仅在水平滚动占主导时触发
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      e.preventDefault();
+
+      // 若当前正在处理一次滚动切换，则仅刷新“空闲解锁”计时器，保证一次手势只切换一题
+      if (isWheelProcessing) {
+        if (wheelIdleTimerRef.current) window.clearTimeout(wheelIdleTimerRef.current);
+        wheelIdleTimerRef.current = window.setTimeout(() => {
+          setIsWheelProcessing(false);
+          wheelIdleTimerRef.current = null;
+        }, 150);
+        return;
+      }
+
+      // 未锁定时，触发一次切换并进入锁定状态
+      setIsWheelProcessing(true);
+      if (e.deltaX > 0 && quizState.currentQuestionIndex < questions.length - 1) {
+        // 通过“点击下一题按钮”模拟真实按下触发
+        nextButtonRef.current?.click();
+      } else if (e.deltaX < 0 && quizState.currentQuestionIndex > 0) {
+        // 通过“点击上一题按钮”模拟真实按下触发
+        prevButtonRef.current?.click();
+      }
+
+      // 启动/重置“空闲解锁”计时器：只有当一段时间内没有新的 wheel 事件，才解除锁定
+      if (wheelIdleTimerRef.current) window.clearTimeout(wheelIdleTimerRef.current);
+      wheelIdleTimerRef.current = window.setTimeout(() => {
+        setIsWheelProcessing(false);
+        wheelIdleTimerRef.current = null;
+      }, 150);
+    }
   };
 
   // Show immediate feedback in recite mode
@@ -363,12 +397,23 @@ export const QuizScreen = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [currentQuestion, quizState.currentQuestionIndex, settings.mode, handleAnswerChange, handlePrev, handleNext, handleSubmit]);
 
+  // 组件卸载时清理计时器
+  useEffect(() => {
+    return () => {
+      if (wheelIdleTimerRef.current) {
+        window.clearTimeout(wheelIdleTimerRef.current);
+        wheelIdleTimerRef.current = null;
+      }
+    };
+  }, []);
+
   if (!currentQuestion) return null;
 
   // 导航按钮组件
   const NavigationButtons = () => (
     <div className="flex flex-row items-center gap-2 sm:gap-4">
       <button
+        ref={prevButtonRef}
         onClick={handlePrev}
         disabled={quizState.currentQuestionIndex === 0}
         className="btn btn-secondary text-sm px-2 sm:px-3 py-2 flex-1"
@@ -390,7 +435,7 @@ export const QuizScreen = ({
       </button>
       
       {quizState.currentQuestionIndex < questions.length - 1 ? (
-        <button onClick={handleNext} className="btn btn-primary text-sm px-2 sm:px-3 py-2 flex-1">
+        <button ref={nextButtonRef} onClick={handleNext} className="btn btn-primary text-sm px-2 sm:px-3 py-2 flex-1">
           <span className="hidden sm:inline">下一题</span>
           <span className="sm:hidden">下</span>
           <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
@@ -525,6 +570,7 @@ export const QuizScreen = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
         style={{ userSelect: 'none' }}
       >
         {/* 滑动指示器 */}
