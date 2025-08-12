@@ -144,7 +144,7 @@ export const ReviewScreen = ({
   return (
     <div className="max-w-4xl mx-auto min-w-[350px] relative">
       {/* Scroll buttons - floating at bottom-right corner */}
-      <div className="fixed right-4 bottom-20 sm:bottom-4 z-50">
+      <div className="fixed right-4 bottom-40 sm:bottom-20 z-50">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 space-y-1">
           {showScrollTop && (
             <button
@@ -321,7 +321,7 @@ export const ReviewScreen = ({
       </div>
 
       {/* Questions */}
-      <div className="space-y-6 pb-24 sm:pb-8">
+      <div className="space-y-6 pb-12 sm:pb-24">
         {currentQuestions.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400">
@@ -476,7 +476,7 @@ export const ReviewScreen = ({
 
       {/* Pagination Controls - Fixed at bottom */}
       {totalPages > 1 && (
-        <div className="fixed left-1/2 transform -translate-x-1/2 z-40 bottom-4 sm:bottom-4">
+        <div className="fixed left-1/2 transform -translate-x-1/2 z-40 bottom-24 sm:bottom-20">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3 max-w-xs sm:max-w-none overflow-x-auto">
             <div className="flex items-center justify-center space-x-1 sm:space-x-2">
               {/* First Page Button */}
