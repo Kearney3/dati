@@ -154,9 +154,9 @@ export const QuizScreen = ({
     if (touchStart) {
       const distance = touchStart - e.targetTouches[0].clientX;
       
-      if (distance > 10) {
+      if (distance > 30) {
         setSwipeDirection('left');
-      } else if (distance < -10) {
+      } else if (distance < -30) {
         setSwipeDirection('right');
       } else {
         setSwipeDirection(null);
@@ -168,8 +168,8 @@ export const QuizScreen = ({
     if (!touchStart || !touchEnd) return;
     
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const isLeftSwipe = distance > 80;
+    const isRightSwipe = distance < -80;
 
     // 检查当前焦点是否在输入框上
     const activeElement = document.activeElement;
@@ -240,9 +240,9 @@ export const QuizScreen = ({
       
       const distance = mouseStart - e.clientX;
       
-      if (distance > 10) {
+      if (distance > 30) {
         setSwipeDirection('left');
-      } else if (distance < -10) {
+      } else if (distance < -30) {
         setSwipeDirection('right');
       } else {
         setSwipeDirection(null);
@@ -254,8 +254,8 @@ export const QuizScreen = ({
     if (!mouseStart || !mouseEnd) return;
     
     const distance = mouseStart - mouseEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const isLeftSwipe = distance > 80;
+    const isRightSwipe = distance < -80;
 
     // 检查当前焦点是否在输入框上
     const activeElement = document.activeElement;
@@ -793,6 +793,7 @@ export const QuizScreen = ({
                     handleAnswerChange(answers.join('|||'));
                   }}
                   className="input"
+                  style={{ userSelect: 'text' }}
                   disabled={settings.mode === 'recite'}
                 />
               ))}
