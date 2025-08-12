@@ -142,7 +142,7 @@ export const ReviewScreen = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto relative">
+    <div className="max-w-4xl mx-auto min-w-[350px] relative">
       {/* Scroll buttons - floating at bottom-right corner */}
       <div className="fixed right-4 bottom-20 sm:bottom-4 z-50">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 space-y-1">
@@ -169,16 +169,18 @@ export const ReviewScreen = ({
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={onBack} className="btn btn-secondary">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          返回结果
+        <button onClick={onBack} className="btn btn-secondary text-sm px-2 sm:px-3 py-2">
+          <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">返回结果</span>
+          <span className="sm:hidden">返回</span>
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white px-2">
           答题回顾
         </h1>
-        <button onClick={onBackToUpload} className="btn btn-primary">
-          <Home className="w-4 h-4 mr-2" />
-          返回主页
+        <button onClick={onBackToUpload} className="btn btn-primary text-sm px-2 sm:px-3 py-2">
+          <Home className="w-4 h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">返回主页</span>
+          <span className="sm:hidden">主页</span>
         </button>
       </div>
 
@@ -284,12 +286,12 @@ export const ReviewScreen = ({
 
         {/* Pagination Settings */}
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 每页显示:
               </label>
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-2">
                 {[
                   { value: 5, label: '5题' },
                   { value: 10, label: '10题' },
@@ -300,7 +302,7 @@ export const ReviewScreen = ({
                   <button
                     key={option.value}
                     onClick={() => handlePageSizeChange(option.value)}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                       pageSize === option.value
                         ? 'bg-primary-600 text-white'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -311,7 +313,7 @@ export const ReviewScreen = ({
                 ))}
               </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               共 {filteredQuestions.length} 题，第 {currentPage} / {totalPages} 页
             </div>
           </div>

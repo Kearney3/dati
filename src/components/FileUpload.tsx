@@ -50,7 +50,7 @@ export const FileUpload = ({ onFileLoaded }: FileUploadProps) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto min-w-[350px]">
       <div
         className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer ${
           isDragOver

@@ -39,7 +39,7 @@ export const ResultsScreen = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto min-w-[350px]">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
@@ -86,7 +86,10 @@ export const ResultsScreen = ({
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
           答题卡 (悬浮查看详情)
         </h3>
-        <div className="grid grid-cols-8 gap-2">
+        <div className="grid gap-2 overflow-x-hidden"
+        style={{
+          gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))'
+        }}>
           {results.map((result, index) => (
             <button
               key={index}
@@ -100,7 +103,7 @@ export const ResultsScreen = ({
                   setTooltipPosition({ x: e.clientX, y: e.clientY });
                 }
               }}
-              className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`p-2 sm:p-2.5 md:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                 result.isCorrect
                   ? 'bg-success-600 text-white hover:bg-success-700'
                   : 'bg-danger-600 text-white hover:bg-danger-700'

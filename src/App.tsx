@@ -316,11 +316,11 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen min-w-[350px] bg-gray-50 dark:bg-gray-900 flex flex-col">
       <ThemeToggle />
       
       <main className="flex-1">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 min-w-[350px]">
           {/* 提示信息Toast */}
           <ToastContainer
             toasts={toasts}
@@ -492,7 +492,7 @@ export default function App() {
       
       {/* Footer - 始终显示 */}
       <footer className="py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 min-w-[350px]">
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6">
             <span className="text-gray-600 dark:text-gray-400 text-sm">
               © 2024 dati - 支持Excel文件导入的多功能测验应用

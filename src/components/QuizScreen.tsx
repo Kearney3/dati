@@ -9,7 +9,9 @@ import {
   Grid,
   AlertCircle,
   Home,
-  Newspaper
+  Newspaper,
+  ArrowUpDown,
+  Keyboard
 } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { checkAnswer } from '../utils/quiz';
@@ -41,6 +43,7 @@ export const QuizScreen = ({
   const [feedbackData, setFeedbackData] = useState<any>(null);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [navButtonsOnTop, setNavButtonsOnTop] = useState(false);
   
   // 滑动状态
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -102,9 +105,15 @@ export const QuizScreen = ({
   };
 
   const handleHint = () => {
-    const result = checkAnswer(currentQuestion, currentAnswer, settings);
-    setFeedbackData(result);
-    setShowFeedback(true);
+    if (showFeedback) {
+      // 如果已经显示反馈，则隐藏
+      setShowFeedback(false);
+    } else {
+      // 如果未显示反馈，则显示
+      const result = checkAnswer(currentQuestion, currentAnswer, settings);
+      setFeedbackData(result);
+      setShowFeedback(true);
+    }
   };
 
   // 触摸滑动处理函数
@@ -250,6 +259,24 @@ export const QuizScreen = ({
     ];
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查当前焦点是否在输入框上
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        (activeElement as HTMLElement).contentEditable === 'true'
+      );
+
+      // 如果焦点在输入框上，不处理快捷键（除了ESC和导航键）
+      if (isInputFocused && currentQuestion.type === '填空题') {
+        // 只允许ESC键关闭导航面板
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setShowNavPanel(false);
+        }
+        return;
+      }
+
       // Allow navigation shortcuts in recite mode, but disable answer selection
       if (settings.mode === 'recite' && ['a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E', 'f', 'F', '1', '2', '3', '4', '5', '6'].includes(e.key)) {
         return;
@@ -314,8 +341,8 @@ export const QuizScreen = ({
         case 'n':
         case 'N':
           e.preventDefault();
-          // N键：打开题目导航
-          setShowNavPanel(true);
+          // N键：切换题目导航面板
+          setShowNavPanel(!showNavPanel);
           break;
         case 'Escape':
           e.preventDefault();
@@ -338,20 +365,59 @@ export const QuizScreen = ({
 
   if (!currentQuestion) return null;
 
+  // 导航按钮组件
+  const NavigationButtons = () => (
+    <div className="flex flex-row items-center gap-2 sm:gap-4">
+      <button
+        onClick={handlePrev}
+        disabled={quizState.currentQuestionIndex === 0}
+        className="btn btn-secondary text-sm px-2 sm:px-3 py-2 flex-1"
+      >
+        <ChevronLeft className="w-4 h-4 mr-1 sm:mr-2" />
+        <span className="hidden sm:inline">上一题</span>
+        <span className="sm:hidden">上</span>
+      </button>
+      
+      {/* 提前交卷按钮 */}
+      <button 
+        onClick={handleEarlySubmit}
+        className="btn btn-warning text-sm px-2 sm:px-3 py-2 flex-1"
+        title="提前交卷"
+      >
+        <Newspaper className="w-4 h-4 mr-1 sm:mr-2" />
+        <span className="hidden sm:inline">提前交卷</span>
+        <span className="sm:hidden">交卷</span>
+      </button>
+      
+      {quizState.currentQuestionIndex < questions.length - 1 ? (
+        <button onClick={handleNext} className="btn btn-primary text-sm px-2 sm:px-3 py-2 flex-1">
+          <span className="hidden sm:inline">下一题</span>
+          <span className="sm:hidden">下</span>
+          <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
+        </button>
+      ) : (
+        <button onClick={handleSubmit} className="btn btn-success text-sm px-2 sm:px-3 py-2 flex-1">
+          <span className="hidden sm:inline">提交试卷</span>
+          <span className="sm:hidden">提交</span>
+        </button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto min-w-[350px]">
       {/* Header */}
       <div className="card p-4 mb-6">
         <div className="flex flex-col space-y-3">
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-8 relative">
             <div 
-              className="bg-primary-600 dark:bg-primary-500 h-8 rounded-full transition-all duration-300"
+              className="bg-primary-400 dark:bg-primary-500 h-8 rounded-full transition-all duration-300"
               style={{ 
                 width: `${((quizState.currentQuestionIndex + 1) / questions.length) * 100}%`,
                 minWidth: '2rem'
               }}
             />
-            <span className="absolute inset-0 flex items-center justify-center text-gray-700 dark:text-white text-xs sm:text-sm font-medium z-10 px-2">
+            <span className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-white text-xs sm:text-sm font-medium z-10 px-2">
               {quizState.currentQuestionIndex + 1} / {questions.length}
             </span>
           </div>
@@ -374,18 +440,29 @@ export const QuizScreen = ({
                 className="btn btn-info text-sm px-3 py-2 flex items-center justify-center"
                 title="快捷键提示"
               >
-                <HelpCircle className="w-4 h-4 sm:mr-2" />
+                <Keyboard className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">快捷键</span>
               </button>
               
               <button
-                onClick={() => setShowNavPanel(true)}
-                className="btn btn-secondary text-sm px-3 py-2 flex items-center justify-center"
+                onClick={() => setShowNavPanel(!showNavPanel)}
+                className="btn btn-success text-sm px-3 py-2 flex items-center justify-center"
                 title="题号导航"
               >
                 <Grid className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">导航</span>
               </button>
+              
+              {/* 按钮位置切换 */}
+              <button
+                onClick={() => setNavButtonsOnTop(!navButtonsOnTop)}
+                className="btn btn-secondary text-sm px-3 py-2 flex items-center justify-center"
+                title={navButtonsOnTop ? "将按钮移到题目下方" : "将按钮移到题目上方"}
+              >
+                <ArrowUpDown className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">{navButtonsOnTop ? "移到底部" : "移到顶部"}</span>
+              </button>
+              
               <button
                 onClick={onExit}
                 className="btn btn-danger text-sm px-3 py-2 flex items-center justify-center"
@@ -419,7 +496,7 @@ export const QuizScreen = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">空格</kbd>
-                  <span>提示答案</span>
+                  <span>答案提示</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">N</kbd>
@@ -430,6 +507,13 @@ export const QuizScreen = ({
           )}
         </div>
       </div>
+
+      {/* Navigation Buttons - Top */}
+      {navButtonsOnTop && (
+        <div className="mb-6">
+          <NavigationButtons />
+        </div>
+      )}
 
       {/* Question */}
       <div 
@@ -620,42 +704,12 @@ export const QuizScreen = ({
         )}
       </div>
 
-      {/* Navigation */}
-      <div className="flex flex-row items-center gap-2 sm:gap-4">
-        <button
-          onClick={handlePrev}
-          disabled={quizState.currentQuestionIndex === 0}
-          className="btn btn-secondary text-sm px-2 sm:px-3 py-2 flex-1"
-        >
-          <ChevronLeft className="w-4 h-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">上一题</span>
-          <span className="sm:hidden">上</span>
-        </button>
-        
-        {/* 提前交卷按钮 */}
-        <button 
-          onClick={handleEarlySubmit}
-          className="btn btn-warning text-sm px-2 sm:px-3 py-2 flex-1"
-          title="提前交卷"
-        >
-          <Newspaper className="w-4 h-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">提前交卷</span>
-          <span className="sm:hidden">交卷</span>
-        </button>
-        
-        {quizState.currentQuestionIndex < questions.length - 1 ? (
-          <button onClick={handleNext} className="btn btn-primary text-sm px-2 sm:px-3 py-2 flex-1">
-            <span className="hidden sm:inline">下一题</span>
-            <span className="sm:hidden">下</span>
-            <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
-          </button>
-        ) : (
-          <button onClick={handleSubmit} className="btn btn-success text-sm px-2 sm:px-3 py-2 flex-1">
-            <span className="hidden sm:inline">提交试卷</span>
-            <span className="sm:hidden">提交</span>
-          </button>
-        )}
-      </div>
+      {/* Navigation Buttons - Bottom */}
+      {!navButtonsOnTop && (
+        <div className="mt-6">
+          <NavigationButtons />
+        </div>
+      )}
 
       {/* Navigation Panel */}
       {showNavPanel && (
@@ -668,20 +722,26 @@ export const QuizScreen = ({
             }
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-4xl w-full mx-2 sm:mx-4 max-h-[85vh] sm:max-h-[80vh] flex flex-col relative overflow-hidden">
+            <div className="flex justify-center items-center mb-4 pt-2 relative">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 题目导航
               </h3>
+              {/* 关闭按钮与标题水平对齐 */}
               <button
                 onClick={() => setShowNavPanel(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className="absolute right-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center transition-colors duration-200"
                 title="关闭导航"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+            <div className="grid gap-2 flex-1 overflow-y-auto overflow-x-hidden"
+            style={{
+              gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))'
+            }}>
               {questions.map((_, index) => (
                 <button
                   key={index}
@@ -689,7 +749,7 @@ export const QuizScreen = ({
                     onQuizStateChange({ ...quizState, currentQuestionIndex: index });
                     setShowNavPanel(false);
                   }}
-                  className={`p-2 sm:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  className={`p-2 sm:p-2.5 md:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                     index === quizState.currentQuestionIndex
                       ? 'bg-primary-600 text-white'
                       : quizState.userAnswers[index]
