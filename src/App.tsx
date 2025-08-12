@@ -383,15 +383,16 @@ export default function App() {
           {currentScreen === 'config' && (
             <div className="max-w-4xl mx-auto space-y-8">
               {/* 返回首页按钮 */}
-              <div className="flex justify-between items-center">
+              <div className="relative flex justify-between items-center">
                 <button
                   onClick={handleBackToUpload}
-                  className="btn btn-secondary flex items-center gap-2"
+                  className="btn btn-secondary flex items-center gap-2 z-10"
+                  title="返回首页"
                 >
                   <Home className="w-4 h-4" />
-                  返回首页
+                  <span className="hidden sm:inline">返回首页</span>
                 </button>
-                <div className="text-center flex-1">
+                <div className="absolute inset-0 flex flex-col justify-center items-center">
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                     配置题库
                   </h1>
@@ -399,7 +400,7 @@ export default function App() {
                     选择工作表并配置全局映射
                   </p>
                 </div>
-                <div className="w-24"></div> {/* 占位，保持标题居中 */}
+                <div className="w-24 z-10"></div> {/* 占位，保持标题居中 */}
               </div>
 
               {/* 工作表选择 */}
