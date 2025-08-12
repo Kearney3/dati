@@ -122,11 +122,34 @@ export const QuizScreen = ({
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
-    setSwipeDirection(null);
+    
+    // 检查当前焦点是否在输入框上
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' || 
+      (activeElement as HTMLElement).contentEditable === 'true'
+    );
+    
+    // 填空题时，如果焦点在输入框上，不设置滑动方向
+    if (currentQuestion.type !== '填空题' || !isInputFocused) {
+      setSwipeDirection(null);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     setTouchEnd(e.targetTouches[0].clientX);
+    
+    // 检查当前焦点是否在输入框上
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' || 
+      (activeElement as HTMLElement).contentEditable === 'true'
+    );
+    
+    // 填空题时，如果焦点在输入框上，不显示滑动指示器
+    if (currentQuestion.type === '填空题' && isInputFocused) return;
     
     if (touchStart) {
       const distance = touchStart - e.targetTouches[0].clientX;
@@ -148,8 +171,16 @@ export const QuizScreen = ({
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
 
-    // 填空题时禁用滑动切换功能
-    if (currentQuestion.type === '填空题') return;
+    // 检查当前焦点是否在输入框上
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' || 
+      (activeElement as HTMLElement).contentEditable === 'true'
+    );
+
+    // 填空题时，如果焦点在输入框上，禁用滑动切换功能
+    if (currentQuestion.type === '填空题' && isInputFocused) return;
 
     if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
       // 向左滑动，下一题
@@ -177,12 +208,35 @@ export const QuizScreen = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     setMouseEnd(null);
     setMouseStart(e.clientX);
-    setSwipeDirection(null);
+    
+    // 检查当前焦点是否在输入框上
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' || 
+      (activeElement as HTMLElement).contentEditable === 'true'
+    );
+    
+    // 填空题时，如果焦点在输入框上，不设置滑动方向
+    if (currentQuestion.type !== '填空题' || !isInputFocused) {
+      setSwipeDirection(null);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (mouseStart !== null) {
       setMouseEnd(e.clientX);
+      
+      // 检查当前焦点是否在输入框上
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        (activeElement as HTMLElement).contentEditable === 'true'
+      );
+      
+      // 填空题时，如果焦点在输入框上，不显示滑动指示器
+      if (currentQuestion.type === '填空题' && isInputFocused) return;
       
       const distance = mouseStart - e.clientX;
       
@@ -203,8 +257,16 @@ export const QuizScreen = ({
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
 
-    // 填空题时禁用滑动切换功能
-    if (currentQuestion.type === '填空题') return;
+    // 检查当前焦点是否在输入框上
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' || 
+      (activeElement as HTMLElement).contentEditable === 'true'
+    );
+
+    // 填空题时，如果焦点在输入框上，禁用滑动切换功能
+    if (currentQuestion.type === '填空题' && isInputFocused) return;
 
     if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
       // 向左滑动，下一题
@@ -231,8 +293,16 @@ export const QuizScreen = ({
 
   // 滚动切换题目处理函数
   const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
-    // 填空题时禁用滚动切换功能
-    if (currentQuestion.type === '填空题') return;
+    // 检查当前焦点是否在输入框上
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' || 
+      (activeElement as HTMLElement).contentEditable === 'true'
+    );
+
+    // 填空题时，如果焦点在输入框上，禁用滚动切换功能
+    if (currentQuestion.type === '填空题' && isInputFocused) return;
 
     // 防止在输入框内滚动时触发题目切换
     const target = e.target as HTMLElement;
@@ -301,9 +371,8 @@ export const QuizScreen = ({
         (activeElement as HTMLElement).contentEditable === 'true'
       );
 
-      // 如果焦点在输入框上，不处理快捷键（除了ESC和导航键）
+      // 填空题时，如果焦点在输入框上，只允许ESC键关闭导航面板
       if (isInputFocused && currentQuestion.type === '填空题') {
-        // 只允许ESC键关闭导航面板
         if (e.key === 'Escape') {
           e.preventDefault();
           setShowNavPanel(false);
@@ -346,18 +415,23 @@ export const QuizScreen = ({
                (currentQuestion.type === '判断题' || currentQuestion.options.length >= minOptions);
       };
 
+      // 验证填空题快捷键是否可用的辅助函数
+      const isValidFillInShortcut = () => {
+        return currentQuestion.type === '填空题' && !isInputFocused;
+      };
+
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
-          // 填空题时禁用左右换题功能
-          if (currentQuestion.type !== '填空题') {
+          // 填空题时，只有在没有输入框焦点时才允许左右换题
+          if (currentQuestion.type !== '填空题' || !isInputFocused) {
             handlePrev();
           }
           break;
         case 'ArrowRight':
           e.preventDefault();
-          // 填空题时禁用左右换题功能
-          if (currentQuestion.type !== '填空题') {
+          // 填空题时，只有在没有输入框焦点时才允许左右换题
+          if (currentQuestion.type !== '填空题' || !isInputFocused) {
             if (quizState.currentQuestionIndex < questions.length - 1) {
               handleNext();
             } else {
@@ -367,16 +441,18 @@ export const QuizScreen = ({
           break;
         case ' ':
           e.preventDefault();
-          // 空格键：提示答案（仅在非背诵模式下）
-          if (settings.mode !== 'recite') {
+          // 空格键：提示答案（仅在非背诵模式下，填空题时需要在没有输入框焦点时）
+          if (settings.mode !== 'recite' && (currentQuestion.type !== '填空题' || !isInputFocused)) {
             handleHint();
           }
           break;
         case 'n':
         case 'N':
           e.preventDefault();
-          // N键：切换题目导航面板
-          setShowNavPanel(!showNavPanel);
+          // N键：切换题目导航面板（填空题时需要在没有输入框焦点时）
+          if (currentQuestion.type !== '填空题' || !isInputFocused) {
+            setShowNavPanel(!showNavPanel);
+          }
           break;
         case 'Escape':
           e.preventDefault();
@@ -386,7 +462,7 @@ export const QuizScreen = ({
         default:
           // 处理选项键
           const mapping = keyMappings.find(m => m.keys.includes(e.key));
-          if (mapping && isValidOption(mapping.minOptions)) {
+          if (mapping && (isValidOption(mapping.minOptions) || isValidFillInShortcut())) {
             handleOptionSelection(mapping.letter);
           }
           break;
@@ -573,8 +649,17 @@ export const QuizScreen = ({
         onWheel={handleWheel}
         style={{ userSelect: 'none' }}
       >
-        {/* 滑动指示器 */}
-        {swipeDirection && (
+        {/* 滑动指示器 - 填空题时只在没有输入框焦点时显示 */}
+        {swipeDirection && (() => {
+          // 检查当前焦点是否在输入框上
+          const activeElement = document.activeElement;
+          const isInputFocused = activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' || 
+            (activeElement as HTMLElement).contentEditable === 'true'
+          );
+          return currentQuestion.type !== '填空题' || !isInputFocused;
+        })() && (
           <div className={`absolute inset-0 flex items-center justify-center z-50 pointer-events-none transition-all duration-200 ${
             swipeDirection === 'left' ? 'bg-blue-500/20' : 'bg-green-500/20'
           }`}>
