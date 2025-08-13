@@ -230,13 +230,5 @@ chore: 构建过程或辅助工具的变动
 
 ⭐ 如果这个项目对您有帮助，请给我们一个星标！ 
 
-<p align="center">
-  <a href="https://starchart.cc/Kearney3/dati">
-    <img src="https://starchart.cc/Kearney3/dati.svg" alt="GitHub Star Chart" width="600" />
-  </a>
-</p>
-<p align="center">
-  <a href="https://starchart.cc/Kearney3/dati">
-    <img src="https://starchart.cc/Kearney3/dati.svg?style=hand-drawn" alt="GitHub Star Chart (手绘风格)" width="600" />
-  </a>
-</p>
+
+[![Star History Chart](https://api.star-history.com/svg?repos=kearney3/dati&type=Date)](https://www.star-history.com/#kearney3/dati&Date)
