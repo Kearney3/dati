@@ -7,6 +7,7 @@ export default defineConfig({
   base: process.env.VERCEL || process.env.NETLIFY ? '/' : '/dati/',
   server: {
     port: 3000,
+    host: '0.0.0.0',
     open: true
   }
 }) 

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Filter, CheckCircle, XCircle, Home, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
+import { ArrowLeft, Filter, CheckCircle, XCircle, Home, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, Search, X, Eye, EyeOff } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { checkAnswer } from '../utils/quiz';
 
@@ -30,6 +30,7 @@ export const ReviewScreen = ({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [showExplanations, setShowExplanations] = useState(true);
 
 
   const filteredQuestions = useMemo(() => {
@@ -69,6 +70,11 @@ export const ReviewScreen = ({
 
   const questionTypes = useMemo(() => {
     return Array.from(new Set(questions.map(q => q.type)));
+  }, [questions]);
+
+  // 统计有解析的题目数量
+  const questionsWithExplanations = useMemo(() => {
+    return questions.filter(q => q.explanation && q.explanation.trim()).length;
   }, [questions]);
 
   // Reset to first page when filters change
@@ -284,6 +290,38 @@ export const ReviewScreen = ({
           </div>
         </div>
 
+        {/* Display Options */}
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              显示选项
+            </label>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowExplanations(!showExplanations)}
+                className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  showExplanations
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+                title={showExplanations ? '隐藏解析' : '显示解析'}
+              >
+                {showExplanations ? (
+                  <Eye className="w-4 h-4" />
+                ) : (
+                  <EyeOff className="w-4 h-4" />
+                )}
+                <span>解析</span>
+                {questionsWithExplanations > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-white/20 dark:bg-black/20 rounded-full text-xs">
+                    {questionsWithExplanations}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Pagination Settings */}
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -384,11 +422,22 @@ export const ReviewScreen = ({
                         isUserSelected = userAnswer?.includes(letter) || false;
                       }
                       
-                      // 使用 checkAnswer 函数来正确处理判断题答案
-                      const { correctAnswerText } = checkAnswer(question, null, settings);
-                      const correctLetters = correctAnswerText.match(/^([A-Z])\./);
-                      const correctLetter = correctLetters ? correctLetters[1] : '';
-                      const isCorrectAnswer = correctLetter === letter;
+                      // 判断是否为正确答案
+                      let isCorrectAnswer = false;
+                      if (question.type === '判断题') {
+                        // 判断题：使用 checkAnswer 函数来正确处理
+                        const { correctAnswerText } = checkAnswer(question, null, settings);
+                        const correctLetters = correctAnswerText.match(/^([A-Z])\./);
+                        const correctLetter = correctLetters ? correctLetters[1] : '';
+                        isCorrectAnswer = correctLetter === letter;
+                      } else if (question.type === '多选题') {
+                        // 多选题：直接检查答案字符串中是否包含该字母
+                        const normalizedAnswer = question.answer.replace(/[,，\s]/g, '').toUpperCase();
+                        isCorrectAnswer = normalizedAnswer.includes(letter);
+                      } else {
+                        // 单选题：直接比较答案
+                        isCorrectAnswer = question.answer.toUpperCase() === letter;
+                      }
                       
                       return (
                         <div
@@ -458,7 +507,7 @@ export const ReviewScreen = ({
                 )}
 
                 {/* Explanation */}
-                {question.explanation && (
+                {question.explanation && showExplanations && (
                   <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
                     <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">
                       解析:

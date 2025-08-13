@@ -76,7 +76,6 @@ export const QuizScreen = ({
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
   const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
-  const [touchEndTime, setTouchEndTime] = useState<number | null>(null);
 
   // 防抖状态
   const [isProcessingTouch, setIsProcessingTouch] = useState(false);
@@ -182,11 +181,6 @@ export const QuizScreen = ({
     const isOptionClick = target.closest('label') || target.closest('input') || target.closest('.input');
     const isClickableElement = !!(isOptionClick || target.closest('button') || target.closest('[role="button"]'));
     
-    // 对于填空题，只有在输入框区域才阻止滑动
-    const isFillInputArea = currentQuestion.type === '填空题' && (
-      target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
-    );
-    
     // 检查是否在选项区域
     const isOptionArea = target.closest('label') || target.closest('.space-y-3');
     
@@ -196,14 +190,18 @@ export const QuizScreen = ({
     setTouchEndY(null);
     setSwipeDirection(null);
     setTouchStartTime(startTime);
-    setTouchEndTime(null);
     
     // 重置滑动确认状态
     setSwipeConfirmed(false);
     setConfirmedDirection(null);
     
-    // 初始化点击检测
-    setIsClickIntent(isClickableElement);
+    // 初始化点击检测 - 在选项区域时，根据移动距离判断
+    if (isOptionArea) {
+      // 选项区域的事件处理由选项容器负责
+      setIsClickIntent(false);
+    } else {
+      setIsClickIntent(isClickableElement);
+    }
     setClickStartTime(startTime);
     setClickStartPos({ x: startX, y: startY });
   };
@@ -218,10 +216,8 @@ export const QuizScreen = ({
       target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
     );
     
-    // 检查是否在选项区域
-    const isOptionArea = target.closest('label') || target.closest('.space-y-3');
-    
-    if (isFillInputFocused() || isProcessingTouch || isFillInputArea || isOptionArea) {
+    // 在选项区域，只有在处理触摸时才阻止滑动
+    if (isFillInputFocused() || isProcessingTouch || isFillInputArea) {
       setSwipeDirection(null);
       return;
     }
@@ -307,10 +303,8 @@ export const QuizScreen = ({
       target && (target.closest('input') || target.closest('.input') || target.tagName === 'INPUT')
     );
     
-    // 检查是否在选项区域
-    const isOptionArea = target && (target.closest('label') || target.closest('.space-y-3'));
-    
-    if (isFillInputFocused() || isProcessingTouch || isFillInputArea || isOptionArea) {
+    // 在选项区域，只有在处理触摸时才阻止滑动
+    if (isFillInputFocused() || isProcessingTouch || isFillInputArea) {
       setSwipeDirection(null);
       return;
     }
@@ -916,23 +910,63 @@ export const QuizScreen = ({
             <div 
               className="space-y-3"
               onTouchStart={(e) => {
+                // 检查是否为点击意图（移动距离很小）
+                const startX = e.targetTouches[0].clientX;
+                const startY = e.targetTouches[0].clientY;
+                
+                // 记录起始位置用于后续判断
+                setClickStartPos({ x: startX, y: startY });
+                setClickStartTime(Date.now());
+                
+                // 暂时阻止事件冒泡，等待判断是否为点击
                 e.stopPropagation();
-                e.preventDefault();
-                // 在选项区域立即标记为点击意图并阻止滑动
-                setIsClickIntent(true);
-                setIsProcessingTouch(true);
               }}
               onTouchMove={(e) => {
+                if (clickStartPos) {
+                  const currentX = e.targetTouches[0].clientX;
+                  const currentY = e.targetTouches[0].clientY;
+                  const deltaX = Math.abs(currentX - clickStartPos.x);
+                  const deltaY = Math.abs(currentY - clickStartPos.y);
+                  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                  
+                  // 如果移动距离超过20px，则认为是滑动，允许事件冒泡
+                  if (distance > 20) {
+                    setIsClickIntent(false);
+                    setIsProcessingTouch(false);
+                    // 不再阻止事件冒泡，允许滑动检测
+                    return;
+                  }
+                }
+                
+                // 如果移动距离小，则阻止事件冒泡
                 e.stopPropagation();
                 e.preventDefault();
               }}
               onTouchEnd={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                // 延迟重置状态
-                setTimeout(() => {
-                  setIsProcessingTouch(false);
-                }, 50);
+                if (clickStartPos) {
+                  const endX = e.changedTouches[0].clientX;
+                  const endY = e.changedTouches[0].clientY;
+                  const deltaX = Math.abs(endX - clickStartPos.x);
+                  const deltaY = Math.abs(endY - clickStartPos.y);
+                  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                  
+                  // 如果移动距离小于20px，则认为是点击
+                  if (distance < 20) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setIsClickIntent(true);
+                    setIsProcessingTouch(true);
+                    
+                    // 延迟重置状态
+                    setTimeout(() => {
+                      setIsProcessingTouch(false);
+                    }, 50);
+                  } else {
+                    // 如果移动距离大，则认为是滑动，不阻止事件冒泡
+                    setIsClickIntent(false);
+                    setIsProcessingTouch(false);
+                  }
+                }
               }}
             >
               {(currentQuestion.type === '判断题' 

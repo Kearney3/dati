@@ -1,19 +1,51 @@
-<p align="center">
-  <img src="public/icon-192.png" alt="dati-智能答题系统" width="96" height="96" />
-</p>
-<p align="center">
-  <a href="https://github.com/Kearney3/dati/stargazers">
+<div align="center">
+  <img src="public/icon-192.png" alt="dati-智能答题系统" width="128" height="128" /><br />
+  <h1 style="margin: 0; font-size: 2.5rem; font-weight: bold;">dati</h1>
+  <p>
+    <img src="https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=white&style=flat" alt="React" />
+    <img src="https://img.shields.io/badge/TypeScript-5.0.2-3178C6?logo=typescript&logoColor=white&style=flat" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/Vite-5.0.0-646CFF?logo=vite&logoColor=white&style=flat" alt="Vite" />
+    <img src="https://img.shields.io/badge/TailwindCSS-3.3.3-06B6D4?logo=tailwindcss&logoColor=white&style=flat" alt="TailwindCSS" />
+    <img src="https://img.shields.io/badge/xlsx-0.18.5-207245?logo=microsoft-excel&logoColor=white&style=flat" alt="xlsx" />
     <img src="https://img.shields.io/github/stars/Kearney3/dati?style=social" alt="GitHub stars" />
-  </a>
-</p>
+  </p>
+  <p>
+    <em>
+      一个现代化的智能答题系统，支持 Excel 文件导入，提供多种测验模式和完善的用户体验。<br />
+      数据不会上传云端，安全保护用户隐私。
+    </em>
+  </p>
+  <p>
+    <a href="https://kearney3.github.io/dati/" target="_blank" style="font-size: 20px; font-weight: bold; text-decoration: none;">
+      👉 在线体验地址（Demo）
+    </a>
+  </p>
+</div>
+<div align="center">
 
+---
 
-# dati-智能答题系统
+<div align="center" style="margin-bottom: 12px;">
+  <p style="font-size: 16px; margin-bottom: 8px;">
+    支持一键部署，点击下方按钮即可将本项目快速部署到 Vercel 或 Netlify，立即体验或搭建属于你自己的智能答题系统：
+  </p>
+  <div style="margin-bottom: 8px;">
+    <span style="font-size: 15px; font-weight: bold; margin-right: 10px;">Vercel 部署：</span>
+    <a href="https://vercel.com/new/clone?repository-url=https://github.com/Kearney3/dati" target="_blank" style="display: inline-block; margin-right: 20px;">
+      <img src="https://vercel.com/button" alt="使用 Vercel 部署" height="32" />
+    </a>
+  </div>
+  <div>
+    <span style="font-size: 15px; font-weight: bold; margin-right: 10px;">Netlify 部署：</span>
+    <a href="https://app.netlify.com/start/deploy?repository=https://github.com/Kearney3/dati" target="_blank" style="display: inline-block;">
+      <img src="https://www.netlify.com/img/deploy/button.svg" alt="使用 Netlify 部署" height="32" />
+    </a>
+  </div>
+</div>
 
-- 一个现代化的智能答题系统，支持Excel文件导入，提供多种测验模式和完善的用户体验。
-- 数据不会上传云端，安全保护用户隐私。
+---
 
-[👉 在线体验地址（Demo）](https://kearney3.github.io/dati/)
+</div>
 
 ## 功能展示
 
