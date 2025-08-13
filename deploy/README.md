@@ -24,7 +24,8 @@ vercel --prod
 **配置说明：**
 - 构建命令：`npm run build`
 - 输出目录：`dist`
-- Node.js 版本：18.x
+- Node.js 版本：18.x（推荐）
+- 框架：Vite + React
 
 ### 2. Netlify 部署
 
@@ -69,13 +70,13 @@ docker run -d -p 5080:5080 --name dati dati
 ```bash
 # 启动服务
 cd deploy
-docker-compose up -d
+docker compose up -d
 
 # 启动包含反向代理的完整环境
-docker-compose --profile proxy up -d
+docker compose --profile proxy up -d
 
 # 停止服务
-docker-compose down
+docker compose down
 ```
 
 ## 🛠️ 部署配置
@@ -86,6 +87,8 @@ docker-compose down
 |--------|------|--------|
 | `NODE_ENV` | 运行环境 | `production` |
 | `PORT` | 端口号（Docker） | `5080` |
+| `VERCEL` | Vercel部署标识 | 自动设置 |
+| `NETLIFY` | Netlify部署标识 | 自动设置 |
 
 ### 构建配置
 
@@ -148,17 +151,21 @@ export default defineConfig(({ mode }) => {
 ### 构建优化
 
 ```bash
-# 分析构建大小
-npm run build -- --analyze
-
 # 预览构建结果
 npm run preview
+
+# 类型检查
+npm run type-check
+
+# 代码检查
+npm run lint
 ```
 
 ### 缓存配置
 
-- 静态资源缓存：1年
-- HTML 文件：无缓存
+- 静态资源缓存：1年（js、css、图片等）
+- HTML 文件：无缓存（确保路由正常工作）
+- 字体文件：1年缓存
 - API 响应：根据需要配置
 
 ## 🔒 安全配置
@@ -187,16 +194,25 @@ npm install
 **路由问题：**
 - 确保配置了 SPA 路由重定向
 - 检查 `vercel.json` 或 `netlify.toml` 配置
+- 确认 `vite.config.ts` 中的 `base` 配置正确
 
 **静态资源加载失败：**
 - 检查 `base` 配置
 - 确认资源路径正确
+- 验证构建输出目录是否为 `dist`
 
 ### 日志查看
 
 **Docker：**
 ```bash
+# 查看容器日志
 docker logs dati
+
+# 查看实时日志
+docker logs -f dati
+
+# 查看容器状态
+docker ps
 ```
 
 **Vercel：**
