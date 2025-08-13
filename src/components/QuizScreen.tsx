@@ -168,7 +168,10 @@ export const QuizScreen = ({
 
   // 优化的触摸滑动处理函数
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (isProcessingTouch || !swipeEnabled) return; // 防抖处理或滑动已禁用
+    // 如果滑动被禁用，直接返回，不进行任何处理
+    if (!swipeEnabled) return;
+    
+    if (isProcessingTouch) return; // 防抖处理
     
     const startX = e.targetTouches[0].clientX;
     const startY = e.targetTouches[0].clientY;
@@ -206,6 +209,9 @@ export const QuizScreen = ({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    // 如果滑动被禁用，直接返回，不进行任何处理
+    if (!swipeEnabled) return;
+    
     // 检查是否在填空题输入框区域
     const target = e.target as HTMLElement;
     const isFillInputArea = currentQuestion.type === '填空题' && (
@@ -215,7 +221,7 @@ export const QuizScreen = ({
     // 检查是否在选项区域
     const isOptionArea = target.closest('label') || target.closest('.space-y-3');
     
-    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea || isOptionArea) {
+    if (isFillInputFocused() || isProcessingTouch || isFillInputArea || isOptionArea) {
       setSwipeDirection(null);
       return;
     }
@@ -292,6 +298,9 @@ export const QuizScreen = ({
   };
 
   const handleTouchEnd = () => {
+    // 如果滑动被禁用，直接返回，不进行任何处理
+    if (!swipeEnabled) return;
+    
     // 检查是否在填空题输入框区域
     const target = document.activeElement as HTMLElement;
     const isFillInputArea = currentQuestion.type === '填空题' && (
@@ -301,7 +310,7 @@ export const QuizScreen = ({
     // 检查是否在选项区域
     const isOptionArea = target && (target.closest('label') || target.closest('.space-y-3'));
     
-    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea || isOptionArea) {
+    if (isFillInputFocused() || isProcessingTouch || isFillInputArea || isOptionArea) {
       setSwipeDirection(null);
       return;
     }
@@ -902,17 +911,29 @@ export const QuizScreen = ({
             </span>
           </div>
 
-          {/* Options */}
+                    {/* Options */}
           {currentQuestion.type !== '填空题' && (
             <div 
               className="space-y-3"
               onTouchStart={(e) => {
                 e.stopPropagation();
-                // 在选项区域立即标记为点击意图
+                e.preventDefault();
+                // 在选项区域立即标记为点击意图并阻止滑动
                 setIsClickIntent(true);
+                setIsProcessingTouch(true);
               }}
-              onTouchMove={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
+              onTouchMove={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                // 延迟重置状态
+                setTimeout(() => {
+                  setIsProcessingTouch(false);
+                }, 50);
+              }}
             >
               {(currentQuestion.type === '判断题' 
                 ? [settings.judgementTrue, settings.judgementFalse]
@@ -940,12 +961,40 @@ export const QuizScreen = ({
                           ? 'border-success-500 bg-success-50 dark:bg-success-900/20'
                           : 'border-gray-200 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-600 active:bg-gray-50 dark:active:bg-gray-700'
                       }`}
-                      onClick={(e) => {
+                      onMouseDown={(e) => {
                         // 防止事件冒泡到滑动处理
                         e.stopPropagation();
                         if (settings.mode === 'recite') return;
                         
-                        // 立即处理选项选择，不依赖复杂的防抖逻辑
+                        // 立即处理选项选择
+                        if (currentQuestion.type === '多选题') {
+                          // 多选题：切换选项状态
+                          const currentAnswerStr = currentAnswer || '';
+                          const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+                          
+                          if (currentAnswers.includes(letter)) {
+                            // 如果已选中，则移除
+                            const index = currentAnswers.indexOf(letter);
+                            currentAnswers.splice(index, 1);
+                          } else {
+                            // 如果未选中，则添加
+                            currentAnswers.push(letter);
+                          }
+                          
+                          const newAnswer = currentAnswers.sort().join('');
+                          handleAnswerChange(newAnswer || null);
+                        } else {
+                          // 单选题和判断题：直接设置答案
+                          handleAnswerChange(letter);
+                        }
+                      }}
+                      onTouchEnd={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        
+                        if (settings.mode === 'recite') return;
+                        
+                        // 处理选项选择
                         if (currentQuestion.type === '多选题') {
                           // 多选题：切换选项状态
                           const currentAnswerStr = currentAnswer || '';
