@@ -1,3 +1,13 @@
+<p align="center">
+  <img src="public/icon-192.png" alt="dati-智能答题系统" width="96" height="96" />
+</p>
+<p align="center">
+  <a href="https://github.com/Kearney3/dati/stargazers">
+    <img src="https://img.shields.io/github/stars/Kearney3/dati?style=social" alt="GitHub stars" />
+  </a>
+</p>
+
+
 # dati-智能答题系统
 
 - 一个现代化的智能答题系统，支持Excel文件导入，提供多种测验模式和完善的用户体验。
@@ -219,3 +229,14 @@ chore: 构建过程或辅助工具的变动
 ---
 
 ⭐ 如果这个项目对您有帮助，请给我们一个星标！ 
+
+<p align="center">
+  <a href="https://starchart.cc/Kearney3/dati">
+    <img src="https://starchart.cc/Kearney3/dati.svg" alt="GitHub Star Chart" width="600" />
+  </a>
+</p>
+<p align="center">
+  <a href="https://starchart.cc/Kearney3/dati">
+    <img src="https://starchart.cc/Kearney3/dati.svg?style=hand-drawn" alt="GitHub Star Chart (手绘风格)" width="600" />
+  </a>
+</p>

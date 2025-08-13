@@ -45,6 +45,8 @@ export const QuizScreen = ({
   const [navButtonsOnTop, setNavButtonsOnTop] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileHint, setShowMobileHint] = useState(true);
+  const [swipeEnabled, setSwipeEnabled] = useState(true);
+  const [showQuizSettings, setShowQuizSettings] = useState(false);
   
   // 检测移动设备
   useEffect(() => {
@@ -61,10 +63,10 @@ export const QuizScreen = ({
   }, []);
   
   // 优化滑动阈值配置 - 增加阈值减少误触发
-  const SWIPE_HINT_THRESHOLD = 150; // 显示方向提示的最小水平位移（像素）
+  const SWIPE_HINT_THRESHOLD = 200; // 显示方向提示的最小水平位移（像素）
   const SWIPE_TRIGGER_THRESHOLD = 200; // 触发换题的最小水平位移（像素）- 增加阈值
   const SWIPE_MAX_VERTICAL_DELTA = 100; // 允许的最大垂直位移（像素）- 增加容错
-  const SWIPE_MIN_VELOCITY = 3; // 最小滑动速度（像素/毫秒）
+  const SWIPE_MIN_VELOCITY = 1; // 最小滑动速度（像素/毫秒）
 
   // 滑动状态
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -78,6 +80,15 @@ export const QuizScreen = ({
 
   // 防抖状态
   const [isProcessingTouch, setIsProcessingTouch] = useState(false);
+  
+  // 点击检测状态 - 用于区分点击和滑动
+  const [isClickIntent, setIsClickIntent] = useState(false);
+  const [clickStartTime, setClickStartTime] = useState<number | null>(null);
+  const [clickStartPos, setClickStartPos] = useState<{x: number, y: number} | null>(null);
+  
+  // 滑动确认状态 - 用于跟踪滑动是否已确认
+  const [swipeConfirmed, setSwipeConfirmed] = useState(false);
+  const [confirmedDirection, setConfirmedDirection] = useState<'left' | 'right' | null>(null);
 
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
@@ -157,19 +168,48 @@ export const QuizScreen = ({
 
   // 优化的触摸滑动处理函数
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (isProcessingTouch) return; // 防抖处理
+    if (isProcessingTouch || !swipeEnabled) return; // 防抖处理或滑动已禁用
+    
+    const startX = e.targetTouches[0].clientX;
+    const startY = e.targetTouches[0].clientY;
+    const startTime = Date.now();
+    
+    // 检查触摸目标是否为选项或输入框
+    const target = e.target as HTMLElement;
+    const isOptionClick = target.closest('label') || target.closest('input') || target.closest('.input');
+    const isClickableElement = !!(isOptionClick || target.closest('button') || target.closest('[role="button"]'));
+    
+    // 对于填空题，只有在输入框区域才阻止滑动
+    const isFillInputArea = currentQuestion.type === '填空题' && (
+      target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
+    );
     
     setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-    setTouchStartY(e.targetTouches[0].clientY);
+    setTouchStart(startX);
+    setTouchStartY(startY);
     setTouchEndY(null);
     setSwipeDirection(null);
-    setTouchStartTime(Date.now());
+    setTouchStartTime(startTime);
     setTouchEndTime(null);
+    
+    // 重置滑动确认状态
+    setSwipeConfirmed(false);
+    setConfirmedDirection(null);
+    
+    // 初始化点击检测
+    setIsClickIntent(isClickableElement);
+    setClickStartTime(startTime);
+    setClickStartPos({ x: startX, y: startY });
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isFillInputFocused() || isProcessingTouch) {
+    // 检查是否在填空题输入框区域
+    const target = e.target as HTMLElement;
+    const isFillInputArea = currentQuestion.type === '填空题' && (
+      target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
+    );
+    
+    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea) {
       setSwipeDirection(null);
       return;
     }
@@ -179,9 +219,19 @@ export const QuizScreen = ({
     setTouchEnd(currentX);
     setTouchEndY(currentY);
     
-    if (touchStart !== null && touchStartY !== null) {
+    if (touchStart !== null && touchStartY !== null && clickStartPos !== null) {
       const deltaX = currentX - touchStart;
       const deltaY = currentY - touchStartY;
+      
+      // 检测是否为点击意图（移动距离很小）
+      const clickDeltaX = Math.abs(currentX - clickStartPos.x);
+      const clickDeltaY = Math.abs(currentY - clickStartPos.y);
+      const clickDistance = Math.sqrt(clickDeltaX * clickDeltaX + clickDeltaY * clickDeltaY);
+      
+      // 如果移动距离超过10px，则不是点击意图
+      if (clickDistance > 10) {
+        setIsClickIntent(false);
+      }
 
       // 若垂直位移过大或垂直位移主导，则不显示左右滑动提示
       if (Math.abs(deltaY) > SWIPE_MAX_VERTICAL_DELTA || Math.abs(deltaY) > Math.abs(deltaX)) {
@@ -189,30 +239,86 @@ export const QuizScreen = ({
         return;
       }
       
-      if (deltaX < -SWIPE_HINT_THRESHOLD) {
-        setSwipeDirection('left');
-      } else if (deltaX > SWIPE_HINT_THRESHOLD) {
-        setSwipeDirection('right');
+      // 检查滑动确认逻辑
+      if (swipeConfirmed && confirmedDirection) {
+        // 如果已经确认滑动，检查是否向反方向滑动取消
+        if ((confirmedDirection === 'left' && deltaX > 50) || 
+            (confirmedDirection === 'right' && deltaX < -50)) {
+          // 向反方向滑动超过50px，取消滑动
+          setSwipeConfirmed(false);
+          setConfirmedDirection(null);
+          setSwipeDirection(null);
+        } else {
+          // 保持确认的滑动方向
+          setSwipeDirection(confirmedDirection);
+        }
       } else {
-        setSwipeDirection(null);
+        // 未确认滑动，检查是否达到确认条件
+        if (deltaX < -SWIPE_HINT_THRESHOLD) {
+          setSwipeDirection('left');
+          // 检查是否达到确认条件（距离和速度）
+          if (Math.abs(deltaX) > SWIPE_TRIGGER_THRESHOLD) {
+            const currentTime = Date.now();
+            const deltaTime = currentTime - (touchStartTime || currentTime);
+            const velocity = Math.abs(deltaX) / deltaTime;
+            if (velocity > SWIPE_MIN_VELOCITY) {
+              setSwipeConfirmed(true);
+              setConfirmedDirection('left');
+            }
+          }
+        } else if (deltaX > SWIPE_HINT_THRESHOLD) {
+          setSwipeDirection('right');
+          // 检查是否达到确认条件（距离和速度）
+          if (Math.abs(deltaX) > SWIPE_TRIGGER_THRESHOLD) {
+            const currentTime = Date.now();
+            const deltaTime = currentTime - (touchStartTime || currentTime);
+            const velocity = Math.abs(deltaX) / deltaTime;
+            if (velocity > SWIPE_MIN_VELOCITY) {
+              setSwipeConfirmed(true);
+              setConfirmedDirection('right');
+            }
+          }
+        } else {
+          setSwipeDirection(null);
+        }
       }
     }
   };
 
   const handleTouchEnd = () => {
-    if (isFillInputFocused() || isProcessingTouch) {
+    // 检查是否在填空题输入框区域
+    const target = document.activeElement as HTMLElement;
+    const isFillInputArea = currentQuestion.type === '填空题' && (
+      target && (target.closest('input') || target.closest('.input') || target.tagName === 'INPUT')
+    );
+    
+    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea) {
       setSwipeDirection(null);
       return;
     }
     
     if (touchStart === null || touchEnd === null || touchStartY === null || touchEndY === null || touchStartTime === null) return;
     
-    setIsProcessingTouch(true); // 开始防抖处理
-    
     const deltaX = touchEnd - touchStart;
     const deltaY = touchEndY - touchStartY;
     const deltaTime = Date.now() - touchStartTime;
     const velocity = Math.abs(deltaX) / deltaTime;
+    
+    // 检查是否为点击意图
+    const isClick = isClickIntent && clickStartPos !== null && clickStartTime !== null;
+    const clickDuration = clickStartTime ? Date.now() - clickStartTime : 0;
+    
+    // 如果是点击意图（移动距离小且时间短），则不处理滑动
+    if (isClick && clickDuration < 300) {
+      setSwipeDirection(null);
+      setIsProcessingTouch(false);
+      setIsClickIntent(false);
+      setClickStartTime(null);
+      setClickStartPos(null);
+      return;
+    }
+    
+    setIsProcessingTouch(true); // 开始防抖处理
 
     // 若垂直位移过大或垂直位移主导，则忽略此次滑动
     if (Math.abs(deltaY) > SWIPE_MAX_VERTICAL_DELTA || Math.abs(deltaY) > Math.abs(deltaX)) {
@@ -221,30 +327,65 @@ export const QuizScreen = ({
       return;
     }
 
-    // 检查滑动距离和速度
-    const isLeftSwipe = deltaX < -SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
-    const isRightSwipe = deltaX > SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
-
-    if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
-      // 向左滑动，下一题
-      setSwipeDirection('left');
-      setTimeout(() => {
-        handleNext();
+    // 优先处理已确认的滑动
+    if (swipeConfirmed && confirmedDirection) {
+      if (confirmedDirection === 'left' && quizState.currentQuestionIndex < questions.length - 1) {
+        // 向左滑动，下一题
+        setSwipeDirection('left');
+        setTimeout(() => {
+          handleNext();
+          setSwipeDirection(null);
+          setIsProcessingTouch(false);
+          setSwipeConfirmed(false);
+          setConfirmedDirection(null);
+        }, 200);
+      } else if (confirmedDirection === 'right' && quizState.currentQuestionIndex > 0) {
+        // 向右滑动，上一题
+        setSwipeDirection('right');
+        setTimeout(() => {
+          handlePrev();
+          setSwipeDirection(null);
+          setIsProcessingTouch(false);
+          setSwipeConfirmed(false);
+          setConfirmedDirection(null);
+        }, 200);
+      } else {
         setSwipeDirection(null);
         setIsProcessingTouch(false);
-      }, 200);
-    } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
-      // 向右滑动，上一题
-      setSwipeDirection('right');
-      setTimeout(() => {
-        handlePrev();
-        setSwipeDirection(null);
-        setIsProcessingTouch(false);
-      }, 200);
+        setSwipeConfirmed(false);
+        setConfirmedDirection(null);
+      }
     } else {
-      setSwipeDirection(null);
-      setIsProcessingTouch(false);
+      // 处理未确认的滑动（原有逻辑）
+      const isLeftSwipe = deltaX < -SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
+      const isRightSwipe = deltaX > SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
+
+      if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
+        // 向左滑动，下一题
+        setSwipeDirection('left');
+        setTimeout(() => {
+          handleNext();
+          setSwipeDirection(null);
+          setIsProcessingTouch(false);
+        }, 200);
+      } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
+        // 向右滑动，上一题
+        setSwipeDirection('right');
+        setTimeout(() => {
+          handlePrev();
+          setSwipeDirection(null);
+          setIsProcessingTouch(false);
+        }, 200);
+      } else {
+        setSwipeDirection(null);
+        setIsProcessingTouch(false);
+      }
     }
+    
+    // 重置点击检测状态
+    setIsClickIntent(false);
+    setClickStartTime(null);
+    setClickStartPos(null);
   };
 
   // 鼠标拖拽处理函数（用于电脑测试）
@@ -506,7 +647,7 @@ export const QuizScreen = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
               <span className="text-lg">📱</span>
-              <span>移动设备：点击选项选择答案，左右滑动切换题目</span>
+              <span>移动设备：在题干上左右滑动可切换题目</span>
             </div>
             <button
               onClick={() => setShowMobileHint(false)}
@@ -519,6 +660,8 @@ export const QuizScreen = ({
           </div>
         </div>
       )}
+
+
 
       {/* Header */}
       <div className="card p-4 mb-6">
@@ -544,7 +687,7 @@ export const QuizScreen = ({
                   title="提示答案"
                 >
                   <HelpCircle className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">提示</span>
+                  <span className="hidden sm:inline">提示答案</span>
                 </button>
               )}
               
@@ -557,6 +700,21 @@ export const QuizScreen = ({
                 <Keyboard className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">快捷键</span>
               </button>
+
+
+              {/* 答题设置按钮 */}
+              <button
+                onClick={() => setShowQuizSettings(!showQuizSettings)}
+                className="btn btn-secondary text-sm px-3 py-2 flex items-center justify-center"
+                title="答题设置"
+              >
+                <svg className="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden sm:inline">答题设置</span>
+              </button>
+              
               
               <button
                 onClick={() => setShowNavPanel(!showNavPanel)}
@@ -565,16 +723,6 @@ export const QuizScreen = ({
               >
                 <Grid className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">导航</span>
-              </button>
-              
-              {/* 按钮位置切换 */}
-              <button
-                onClick={() => setNavButtonsOnTop(!navButtonsOnTop)}
-                className="btn btn-secondary text-sm px-3 py-2 flex items-center justify-center"
-                title={navButtonsOnTop ? "将按钮移到题目下方" : "将按钮移到题目上方"}
-              >
-                <ArrowUpDown className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">{navButtonsOnTop ? "移到底部" : "移到顶部"}</span>
               </button>
               
               <button
@@ -620,27 +768,70 @@ export const QuizScreen = ({
               
               {/* 移动设备操作提示 */}
               <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-2">
-                  📱 移动设备操作：
+                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-2">
+                  📱 移动设备操作：在题干位置上左右滑动切换题目
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-blue-600 dark:text-blue-400">
-                  <div className="flex items-center gap-1">
+              </div>
+            </div>
+          )}
+
+          {/* 答题设置面板 */}
+          {showQuizSettings && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div className="space-y-4">
+                {/* 切题按钮位置设置 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">切题按钮位置</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setNavButtonsOnTop(false)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        !navButtonsOnTop
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      }`}
+                    >
+                      底部
+                    </button>
+                    <button
+                      onClick={() => setNavButtonsOnTop(true)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        navButtonsOnTop
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      }`}
+                    >
+                      顶部
+                    </button>
+                  </div>
+                </div>
+
+                {/* 滑动切题开关 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <span className="text-lg">👆</span>
-                    <span>点击选项选择答案</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">滑动切换题目</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg">👈👉</span>
-                    <span>左右滑动切换题目</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg">📝</span>
-                    <span>填空题点击输入框输入</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg">🔍</span>
-                    <span>点击"提示"查看答案</span>
-                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={swipeEnabled}
+                      onChange={(e) => setSwipeEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
+
+                {/* 状态提示 */}
+                {!swipeEnabled && (
+                  <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs text-yellow-700 dark:text-yellow-300">
+                    💡 已禁用滑动切换，请使用切题按钮切换题目
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -704,7 +895,12 @@ export const QuizScreen = ({
 
           {/* Options */}
           {currentQuestion.type !== '填空题' && (
-            <div className="space-y-3">
+            <div 
+              className="space-y-3"
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+            >
               {(currentQuestion.type === '判断题' 
                 ? [settings.judgementTrue, settings.judgementFalse]
                 : currentQuestion.options
@@ -734,7 +930,17 @@ export const QuizScreen = ({
                       onClick={(e) => {
                         // 防止事件冒泡到滑动处理
                         e.stopPropagation();
+                        e.preventDefault();
                         if (settings.mode === 'recite') return;
+                        
+                        // 立即标记为点击意图，防止滑动触发
+                        setIsClickIntent(true);
+                        setIsProcessingTouch(true);
+                        
+                        // 延迟重置状态，确保滑动检测不会触发
+                        setTimeout(() => {
+                          setIsProcessingTouch(false);
+                        }, 100);
                         
                         if (currentQuestion.type === '多选题') {
                           // 多选题：切换选项状态
@@ -819,6 +1025,9 @@ export const QuizScreen = ({
                       answers[index] = e.target.value;
                       handleAnswerChange(answers.join('|||'));
                     }}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
                     className="input w-full text-base py-3 px-4 min-h-[48px] touch-manipulation"
                     disabled={settings.mode === 'recite'}
                     style={{
