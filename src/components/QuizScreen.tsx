@@ -43,11 +43,28 @@ export const QuizScreen = ({
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navButtonsOnTop, setNavButtonsOnTop] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileHint, setShowMobileHint] = useState(true);
   
-  // 滑动阈值配置
-  const SWIPE_HINT_THRESHOLD = 24; // 显示方向提示的最小水平位移（像素）
-  const SWIPE_TRIGGER_THRESHOLD = 96; // 触发换题的最小水平位移（像素）
-  const SWIPE_MAX_VERTICAL_DELTA = 60; // 允许的最大垂直位移（像素），超过则判定为非水平滑动
+  // 检测移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) || 
+                            window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // 优化滑动阈值配置 - 增加阈值减少误触发
+  const SWIPE_HINT_THRESHOLD = 150; // 显示方向提示的最小水平位移（像素）
+  const SWIPE_TRIGGER_THRESHOLD = 200; // 触发换题的最小水平位移（像素）- 增加阈值
+  const SWIPE_MAX_VERTICAL_DELTA = 100; // 允许的最大垂直位移（像素）- 增加容错
+  const SWIPE_MIN_VELOCITY = 3; // 最小滑动速度（像素/毫秒）
 
   // 滑动状态
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -56,6 +73,11 @@ export const QuizScreen = ({
   
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
+  const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
+  const [touchEndTime, setTouchEndTime] = useState<number | null>(null);
+
+  // 防抖状态
+  const [isProcessingTouch, setIsProcessingTouch] = useState(false);
 
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
@@ -133,21 +155,25 @@ export const QuizScreen = ({
     }
   };
 
-  // 触摸滑动处理函数
+  // 优化的触摸滑动处理函数
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isProcessingTouch) return; // 防抖处理
+    
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
     setTouchStartY(e.targetTouches[0].clientY);
     setTouchEndY(null);
     setSwipeDirection(null);
-    
+    setTouchStartTime(Date.now());
+    setTouchEndTime(null);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isFillInputFocused()) {
+    if (isFillInputFocused() || isProcessingTouch) {
       setSwipeDirection(null);
       return;
     }
+    
     const currentX = e.targetTouches[0].clientX;
     const currentY = e.targetTouches[0].clientY;
     setTouchEnd(currentX);
@@ -174,23 +200,30 @@ export const QuizScreen = ({
   };
 
   const handleTouchEnd = () => {
-    if (isFillInputFocused()) {
+    if (isFillInputFocused() || isProcessingTouch) {
       setSwipeDirection(null);
       return;
     }
-    if (touchStart === null || touchEnd === null || touchStartY === null || touchEndY === null) return;
+    
+    if (touchStart === null || touchEnd === null || touchStartY === null || touchEndY === null || touchStartTime === null) return;
+    
+    setIsProcessingTouch(true); // 开始防抖处理
     
     const deltaX = touchEnd - touchStart;
     const deltaY = touchEndY - touchStartY;
+    const deltaTime = Date.now() - touchStartTime;
+    const velocity = Math.abs(deltaX) / deltaTime;
 
     // 若垂直位移过大或垂直位移主导，则忽略此次滑动
     if (Math.abs(deltaY) > SWIPE_MAX_VERTICAL_DELTA || Math.abs(deltaY) > Math.abs(deltaX)) {
       setSwipeDirection(null);
+      setIsProcessingTouch(false);
       return;
     }
 
-    const isLeftSwipe = deltaX < -SWIPE_TRIGGER_THRESHOLD;
-    const isRightSwipe = deltaX > SWIPE_TRIGGER_THRESHOLD;
+    // 检查滑动距离和速度
+    const isLeftSwipe = deltaX < -SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
+    const isRightSwipe = deltaX > SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
 
     if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
       // 向左滑动，下一题
@@ -198,16 +231,19 @@ export const QuizScreen = ({
       setTimeout(() => {
         handleNext();
         setSwipeDirection(null);
-      }, 150);
+        setIsProcessingTouch(false);
+      }, 200);
     } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
       // 向右滑动，上一题
       setSwipeDirection('right');
       setTimeout(() => {
         handlePrev();
         setSwipeDirection(null);
-      }, 150);
+        setIsProcessingTouch(false);
+      }, 200);
     } else {
       setSwipeDirection(null);
+      setIsProcessingTouch(false);
     }
   };
 
@@ -419,7 +455,7 @@ export const QuizScreen = ({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [currentQuestion, quizState.currentQuestionIndex, settings.mode, handleAnswerChange, handlePrev, handleNext, handleSubmit]);
+  }, [currentQuestion, quizState.currentQuestionIndex, settings.mode, currentAnswer, questions.length, showNavPanel, showFeedback, handleAnswerChange, handlePrev, handleNext, handleSubmit, handleHint]);
 
   if (!currentQuestion) return null;
 
@@ -464,6 +500,26 @@ export const QuizScreen = ({
 
   return (
     <div className="max-w-4xl mx-auto min-w-[350px]">
+      {/* 移动设备操作提示横幅 */}
+      {isMobile && showMobileHint && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+              <span className="text-lg">📱</span>
+              <span>移动设备：点击选项选择答案，左右滑动切换题目</span>
+            </div>
+            <button
+              onClick={() => setShowMobileHint(false)}
+              className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="card p-4 mb-6">
         <div className="flex flex-col space-y-3">
@@ -561,6 +617,31 @@ export const QuizScreen = ({
                   <span>题目导航</span>
                 </div>
               </div>
+              
+              {/* 移动设备操作提示 */}
+              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-2">
+                  📱 移动设备操作：
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-blue-600 dark:text-blue-400">
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg">👆</span>
+                    <span>点击选项选择答案</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg">👈👉</span>
+                    <span>左右滑动切换题目</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg">📝</span>
+                    <span>填空题点击输入框输入</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg">🔍</span>
+                    <span>点击"提示"查看答案</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -575,7 +656,7 @@ export const QuizScreen = ({
 
       {/* Question */}
       <div 
-        className="card p-6 mb-6 relative overflow-hidden"
+        className="card p-6 mb-6 relative overflow-hidden touch-manipulation"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -583,7 +664,11 @@ export const QuizScreen = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        style={{ userSelect: 'none' }}
+        style={{ 
+          userSelect: 'none',
+          touchAction: 'pan-y', // 允许垂直滚动，但优化水平滑动
+          WebkitOverflowScrolling: 'touch' // iOS 滚动优化
+        }}
       >
         {/* 滑动指示器 */}
         {swipeDirection && (
@@ -632,74 +717,89 @@ export const QuizScreen = ({
                 const isCorrectAnswer = currentQuestion.answer.includes(letter);
                 
                 return (
-                  <label
+                  <div
                     key={index}
-                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                      isSelected
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : isCorrectAnswer && settings.mode === 'recite'
-                        ? 'border-success-500 bg-success-50 dark:bg-success-900/20'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-600'
-                    } ${settings.mode === 'recite' ? 'pointer-events-none opacity-75' : ''}`}
+                    className={`relative ${
+                      settings.mode === 'recite' ? 'pointer-events-none opacity-75' : ''
+                    }`}
                   >
-                    <input
-                      type={currentQuestion.type === '多选题' ? 'checkbox' : 'radio'}
-                      name={`question-${quizState.currentQuestionIndex}`}
-                      value={letter}
-                      checked={isSelected || false}
-                      onChange={(e) => {
+                    <label
+                      className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 min-h-[60px] touch-manipulation ${
+                        isSelected
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                          : isCorrectAnswer && settings.mode === 'recite'
+                          ? 'border-success-500 bg-success-50 dark:bg-success-900/20'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-600 active:bg-gray-50 dark:active:bg-gray-700'
+                      }`}
+                      onClick={(e) => {
+                        // 防止事件冒泡到滑动处理
+                        e.stopPropagation();
+                        if (settings.mode === 'recite') return;
+                        
                         if (currentQuestion.type === '多选题') {
-                          // 确保currentAnswer是字符串
+                          // 多选题：切换选项状态
                           const currentAnswerStr = currentAnswer || '';
                           const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
                           
-                          if (e.target.checked) {
-                            if (!currentAnswers.includes(letter)) {
-                              currentAnswers.push(letter);
-                            }
-                          } else {
+                          if (currentAnswers.includes(letter)) {
+                            // 如果已选中，则移除
                             const index = currentAnswers.indexOf(letter);
-                            if (index > -1) currentAnswers.splice(index, 1);
+                            currentAnswers.splice(index, 1);
+                          } else {
+                            // 如果未选中，则添加
+                            currentAnswers.push(letter);
                           }
                           
                           const newAnswer = currentAnswers.sort().join('');
                           handleAnswerChange(newAnswer || null);
                         } else {
+                          // 单选题和判断题：直接设置答案
                           handleAnswerChange(letter);
                         }
                       }}
-                      className="sr-only"
-                      disabled={settings.mode === 'recite'}
-                    />
-                    <span className={`flex-shrink-0 w-6 h-6 border-2 mr-3 flex items-center justify-center ${
-                      currentQuestion.type === '多选题' 
-                        ? 'rounded border-gray-300 dark:border-gray-600' 
-                        : 'rounded-full border-gray-300 dark:border-gray-600'
-                    }`}>
-                      {isSelected && (
-                        currentQuestion.type === '多选题' ? (
-                          <div className="w-3 h-3 bg-primary-600 rounded-sm" />
-                        ) : (
-                          <div className="w-3 h-3 rounded-full bg-primary-600" />
-                        )
-                      )}
-                      {isCorrectAnswer && settings.mode === 'recite' && !isSelected && (
-                        currentQuestion.type === '多选题' ? (
-                          <div className="w-3 h-3 bg-success-600 rounded-sm" />
-                        ) : (
-                          <div className="w-3 h-3 rounded-full bg-success-600" />
-                        )
-                      )}
-                    </span>
-                    <span className="text-gray-900 dark:text-white flex items-center">
-                      {letter}. {option}
-                      {isCorrectAnswer && settings.mode === 'recite' && (
-                        <span className="ml-2 text-success-600 dark:text-success-400 text-sm font-medium">
-                          ✓ 正确答案
-                        </span>
-                      )}
-                    </span>
-                  </label>
+                    >
+                      <input
+                        type={currentQuestion.type === '多选题' ? 'checkbox' : 'radio'}
+                        name={`question-${quizState.currentQuestionIndex}`}
+                        value={letter}
+                        checked={isSelected || false}
+                        onChange={(e) => {
+                          // 防止重复处理
+                          e.stopPropagation();
+                        }}
+                        className="sr-only"
+                        disabled={settings.mode === 'recite'}
+                      />
+                      <span className={`flex-shrink-0 w-6 h-6 border-2 mr-3 flex items-center justify-center ${
+                        currentQuestion.type === '多选题' 
+                          ? 'rounded border-gray-300 dark:border-gray-600' 
+                          : 'rounded-full border-gray-300 dark:border-gray-600'
+                      }`}>
+                        {isSelected && (
+                          currentQuestion.type === '多选题' ? (
+                            <div className="w-3 h-3 bg-primary-600 rounded-sm" />
+                          ) : (
+                            <div className="w-3 h-3 rounded-full bg-primary-600" />
+                          )
+                        )}
+                        {isCorrectAnswer && settings.mode === 'recite' && !isSelected && (
+                          currentQuestion.type === '多选题' ? (
+                            <div className="w-3 h-3 bg-success-600 rounded-sm" />
+                          ) : (
+                            <div className="w-3 h-3 rounded-full bg-success-600" />
+                          )
+                        )}
+                      </span>
+                      <span className="text-gray-900 dark:text-white flex items-center flex-1">
+                        {letter}. {option}
+                        {isCorrectAnswer && settings.mode === 'recite' && (
+                          <span className="ml-2 text-success-600 dark:text-success-400 text-sm font-medium">
+                            ✓ 正确答案
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  </div>
                 );
               })}
             </div>
@@ -709,19 +809,25 @@ export const QuizScreen = ({
           {currentQuestion.type === '填空题' && (
             <div className="space-y-3">
               {currentQuestion.answer.split('|||').map((_, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  placeholder={`请填写第 ${index + 1} 个答案`}
-                  value={currentAnswer ? currentAnswer.split('|||')[index] || '' : ''}
-                  onChange={(e) => {
-                    const answers = currentAnswer ? currentAnswer.split('|||') : [];
-                    answers[index] = e.target.value;
-                    handleAnswerChange(answers.join('|||'));
-                  }}
-                  className="input"
-                  disabled={settings.mode === 'recite'}
-                />
+                <div key={index} className="relative">
+                  <input
+                    type="text"
+                    placeholder={`请填写第 ${index + 1} 个答案`}
+                    value={currentAnswer ? currentAnswer.split('|||')[index] || '' : ''}
+                    onChange={(e) => {
+                      const answers = currentAnswer ? currentAnswer.split('|||') : [];
+                      answers[index] = e.target.value;
+                      handleAnswerChange(answers.join('|||'));
+                    }}
+                    className="input w-full text-base py-3 px-4 min-h-[48px] touch-manipulation"
+                    disabled={settings.mode === 'recite'}
+                    style={{
+                      fontSize: '16px', // 防止iOS缩放
+                      WebkitAppearance: 'none',
+                      borderRadius: '8px'
+                    }}
+                  />
+                </div>
               ))}
             </div>
           )}
