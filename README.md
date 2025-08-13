@@ -1,6 +1,7 @@
 # dati-智能答题系统
 
-一个现代化的智能答题系统，支持Excel文件导入，提供多种测验模式和完善的用户体验。
+- 一个现代化的智能答题系统，支持Excel文件导入，提供多种测验模式和完善的用户体验。
+- 数据不会上传云端，安全保护用户隐私。
 
 [👉 在线体验地址（Demo）](https://kearney3.github.io/dati/)
 
@@ -50,7 +51,7 @@ npm install
 npm run dev
 ```
 
-访问 [http://localhost:5173](http://localhost:5173) 查看应用。
+访问 [http://localhost:3000](http://localhost:3000) 查看应用。
 
 ### 构建生产版本
 
@@ -62,29 +63,6 @@ npm run build
 npm run preview
 ```
 
-## 📁 项目结构
-
-```
-dati/
-├── src/                    # 源代码
-│   ├── components/         # React组件
-│   │   ├── FileUpload.tsx      # 文件上传
-│   │   ├── HeaderMapping.tsx   # 表头映射
-│   │   ├── SheetSelector.tsx   # 工作表选择
-│   │   ├── ExamConfig.tsx      # 考试配置
-│   │   ├── QuizSettings.tsx    # 测验设置
-│   │   ├── QuizScreen.tsx      # 测验界面
-│   │   ├── ReviewScreen.tsx    # 复习界面
-│   │   ├── ResultsScreen.tsx   # 结果展示
-│   │   └── ThemeToggle.tsx     # 主题切换
-│   ├── hooks/             # 自定义Hooks
-│   ├── types/             # TypeScript类型
-│   ├── utils/             # 工具函数
-│   └── App.tsx           # 主应用组件
-├── public/                # 静态资源
-├── deploy/                # 部署配置
-└── docs/                  # 项目文档
-```
 
 ## 🛠️ 技术栈
 
@@ -99,7 +77,7 @@ dati/
 - **响应式设计** - 移动端适配
 
 ### 数据处理
-- **SheetJS (xlsx)** - Excel文件处理
+- **xlsx** - Excel文件处理
 - **本地存储** - 数据持久化
 
 ### 部署
@@ -153,41 +131,7 @@ dati/
 - 选项随机排列
 - 增加测验难度
 
-## 🔧 开发指南
 
-### 代码规范
-- 使用 TypeScript 进行类型检查
-- 遵循 ESLint 代码规范
-- 使用 Prettier 格式化代码
-
-### 组件开发
-```typescript
-import React from 'react';
-
-interface ComponentProps {
-  // 定义Props类型
-}
-
-export const ComponentName: React.FC<ComponentProps> = ({ 
-  // 组件实现
-}) => {
-  return (
-    // JSX结构
-  );
-};
-```
-
-### 工具函数
-```typescript
-/**
- * 函数描述
- * @param param 参数描述
- * @returns 返回值描述
- */
-export const functionName = (param: Type): ReturnType => {
-  // 函数实现
-};
-```
 
 ## 🚀 部署指南
 
@@ -232,22 +176,6 @@ cd deploy && docker-compose up -d
 
 更多部署选项和高级配置请查看：[📖 完整部署指南](deploy/README.md)
 
-## 📊 性能优化
-
-### 代码分割
-- 按路由分割代码
-- 懒加载组件
-- 优化首屏加载
-
-### 资源优化
-- 图片压缩和优化
-- CSS和JS压缩
-- CDN加速
-
-### 缓存策略
-- 浏览器缓存
-- 本地存储
-- 离线支持
 
 ## 🤝 贡献指南
 
