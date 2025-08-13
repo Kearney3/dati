@@ -184,6 +184,9 @@ export const QuizScreen = ({
       target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
     );
     
+    // 检查是否在选项区域
+    const isOptionArea = target.closest('label') || target.closest('.space-y-3');
+    
     setTouchEnd(null);
     setTouchStart(startX);
     setTouchStartY(startY);
@@ -209,7 +212,10 @@ export const QuizScreen = ({
       target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
     );
     
-    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea) {
+    // 检查是否在选项区域
+    const isOptionArea = target.closest('label') || target.closest('.space-y-3');
+    
+    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea || isOptionArea) {
       setSwipeDirection(null);
       return;
     }
@@ -292,7 +298,10 @@ export const QuizScreen = ({
       target && (target.closest('input') || target.closest('.input') || target.tagName === 'INPUT')
     );
     
-    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea) {
+    // 检查是否在选项区域
+    const isOptionArea = target && (target.closest('label') || target.closest('.space-y-3'));
+    
+    if (isFillInputFocused() || isProcessingTouch || !swipeEnabled || isFillInputArea || isOptionArea) {
       setSwipeDirection(null);
       return;
     }
@@ -848,16 +857,16 @@ export const QuizScreen = ({
       {/* Question */}
       <div 
         className="card p-6 mb-6 relative overflow-hidden touch-manipulation"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={swipeEnabled ? handleTouchStart : undefined}
+        onTouchMove={swipeEnabled ? handleTouchMove : undefined}
+        onTouchEnd={swipeEnabled ? handleTouchEnd : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         style={{ 
           userSelect: 'none',
-          touchAction: 'pan-y', // 允许垂直滚动，但优化水平滑动
+          touchAction: swipeEnabled ? 'pan-y' : 'auto', // 禁用滑动时允许所有触摸操作
           WebkitOverflowScrolling: 'touch' // iOS 滚动优化
         }}
       >
@@ -897,7 +906,11 @@ export const QuizScreen = ({
           {currentQuestion.type !== '填空题' && (
             <div 
               className="space-y-3"
-              onTouchStart={(e) => e.stopPropagation()}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                // 在选项区域立即标记为点击意图
+                setIsClickIntent(true);
+              }}
               onTouchMove={(e) => e.stopPropagation()}
               onTouchEnd={(e) => e.stopPropagation()}
             >
@@ -930,18 +943,9 @@ export const QuizScreen = ({
                       onClick={(e) => {
                         // 防止事件冒泡到滑动处理
                         e.stopPropagation();
-                        e.preventDefault();
                         if (settings.mode === 'recite') return;
                         
-                        // 立即标记为点击意图，防止滑动触发
-                        setIsClickIntent(true);
-                        setIsProcessingTouch(true);
-                        
-                        // 延迟重置状态，确保滑动检测不会触发
-                        setTimeout(() => {
-                          setIsProcessingTouch(false);
-                        }, 100);
-                        
+                        // 立即处理选项选择，不依赖复杂的防抖逻辑
                         if (currentQuestion.type === '多选题') {
                           // 多选题：切换选项状态
                           const currentAnswerStr = currentAnswer || '';
