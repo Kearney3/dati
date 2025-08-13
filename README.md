@@ -15,6 +15,32 @@
 
 [👉 在线体验地址（Demo）](https://kearney3.github.io/dati/)
 
+## 功能展示
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="public/screenshot-home.png" alt="首页截图" width="320" /><br />
+      <sub>首页</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshot-quiz.png" alt="答题模式截图" width="320" /><br />
+      <sub>答题模式</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="public/screenshot-result.png" alt="答题结果截图" width="320" /><br />
+      <sub>答题结果</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshot-review.png" alt="答题回顾截图" width="320" /><br />
+      <sub>答题回顾</sub>
+    </td>
+  </tr>
+</table>
+
+
 ## ✨ 功能特性
 
 ### 📊 Excel文件支持
@@ -44,7 +70,7 @@
 ## 🚀 快速开始
 
 ### 环境要求
-- Node.js >= 16.0.0
+- Node.js >= 18.0.0（推荐）
 - npm >= 8.0.0
 
 ### 安装和运行
@@ -173,14 +199,19 @@ netlify deploy --prod --dir=dist
 ```bash
 # 使用Docker
 docker build -f deploy/Dockerfile -t dati .
-docker run -d -p 5080:5080 dati
+docker run -d -p 5080:5080 --name dati dati
 
-# 使用Docker Compose
-cd deploy && docker-compose up -d
+# 使用Docker Compose（推荐）
+cd deploy && docker compose up -d
+
+# 启动包含反向代理的完整环境
+docker compose --profile proxy up -d
 ```
 
 #### GitHub Pages 部署
 推送到 main 分支即可自动部署。访问: `https://username.github.io/dati`
+
+**注意**：GitHub Pages 部署需要配置正确的 base 路径，项目已自动适配。
 
 ### ⚙️ 详细配置
 
@@ -230,5 +261,11 @@ chore: 构建过程或辅助工具的变动
 
 ⭐ 如果这个项目对您有帮助，请给我们一个星标！ 
 
+<a href="https://www.star-history.com/#kearney3/dati&Date">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=kearney3/dati&type=Date)](https://www.star-history.com/#kearney3/dati&Date)
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=kearney3/dati&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=kearney3/dati&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=kearney3/dati&type=Date" />
+ </picture>
+</a>
