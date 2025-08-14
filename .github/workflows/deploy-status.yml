@@ -1,0 +1,34 @@
+name: Deploy Status Check
+
+on:
+  workflow_run:
+    workflows: ["Deploy to Multiple Platforms"]
+    types:
+      - completed
+
+jobs:
+  check-deploy-status:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - name: Check Vercel deployment
+      run: |
+        echo "✅ 所有部署任务已完成"
+        echo "📊 部署状态: ${{ github.event.workflow_run.conclusion }}"
+        
+    - name: Notify deployment success
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: deployments } = await github.rest.repos.listDeployments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            environment: 'production'
+          });
+          
+          if (deployments.length > 0) {
+            const latestDeployment = deployments[0];
+            console.log(`🚀 最新部署: ${latestDeployment.created_at}`);
+            console.log(`📍 部署环境: ${latestDeployment.environment}`);
+          }
