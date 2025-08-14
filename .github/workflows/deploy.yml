@@ -72,24 +72,34 @@ jobs:
   deploy-vercel:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && secrets.VERCEL_TOKEN != ''
+    if: github.ref == 'refs/heads/main'
     
     steps:
     - name: Check Vercel secrets
       run: |
+        echo "🔍 检查Vercel配置..."
+        
+        # 检查必要的secrets是否配置
         if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
-          echo "❌ VERCEL_TOKEN 未配置，跳过Vercel部署"
+          echo "❌ VERCEL_TOKEN 未配置"
+          echo "请按照 VERCEL_SETUP.md 配置Vercel Token"
           exit 1
         fi
+        
         if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
-          echo "❌ VERCEL_ORG_ID 未配置，跳过Vercel部署"
+          echo "❌ VERCEL_ORG_ID 未配置"
+          echo "请按照 VERCEL_SETUP.md 配置Vercel Org ID"
           exit 1
         fi
+        
         if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
-          echo "❌ VERCEL_PROJECT_ID 未配置，跳过Vercel部署"
+          echo "❌ VERCEL_PROJECT_ID 未配置"
+          echo "请按照 VERCEL_SETUP.md 配置Vercel Project ID"
           exit 1
         fi
+        
         echo "✅ Vercel secrets 配置正确"
+        echo "🚀 开始部署到Vercel..."
         
     - name: Checkout code
       uses: actions/checkout@v4
