@@ -27,6 +27,9 @@
     <a href="https://datiapp.netlify.app/" target="_blank" style="font-size: 18px; font-weight: bold; text-decoration: none;">
       🌐 Netlify 访问地址
     </a>
+    <a href="https://datiapp.pages.dev/" target="_blank" style="font-size: 18px; font-weight: bold; text-decoration: none; margin-left: 16px;">
+      ☁️ Cloudflare Pages 访问地址
+    </a>
   </p>
 
   
