@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+    build-github-pages:
     runs-on: ubuntu-latest
     
     steps:
@@ -23,18 +23,45 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Build application
+    - name: Build application for GitHub Pages
       run: npm run build
-      
-    - name: Upload build artifacts
+      env:
+        GITHUB_PAGES: true
+        
+    - name: Upload build artifacts for GitHub Pages
       uses: actions/upload-artifact@v4
       with:
-        name: dist
+        name: dist-github-pages
+        path: dist/
+
+  build-other-platforms:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application for other platforms
+      run: npm run build
+        
+    - name: Upload build artifacts for other platforms
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-other-platforms
         path: dist/
 
   # 部署到GitHub Pages
   deploy-github-pages:
-    needs: build
+    needs: build-github-pages
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
@@ -48,10 +75,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
       
     steps:
-    - name: Download build artifacts
+    - name: Download build artifacts for GitHub Pages
       uses: actions/download-artifact@v4
       with:
-        name: dist
+        name: dist-github-pages
         path: dist/
         
     - name: Setup Pages
@@ -70,7 +97,7 @@ jobs:
 
   # 部署到Vercel
   deploy-vercel:
-    needs: build
+    needs: build-other-platforms
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
@@ -127,7 +154,7 @@ jobs:
 
   # 部署到Netlify
   deploy-netlify:
-    needs: build
+    needs: build-other-platforms
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
@@ -152,10 +179,10 @@ jobs:
         echo "✅ Netlify secrets 配置正确"
         echo "🚀 开始部署到Netlify..."
         
-    - name: Download build artifacts
+    - name: Download build artifacts for Netlify
       uses: actions/download-artifact@v4
       with:
-        name: dist
+        name: dist-other-platforms
         path: dist/
         
     - name: Deploy to Netlify
@@ -188,7 +215,7 @@ jobs:
 
   # 构建Docker镜像 (Docker Hub)
   build-docker:
-    needs: build
+    needs: build-other-platforms
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
