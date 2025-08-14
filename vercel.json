@@ -5,6 +5,11 @@
   "installCommand": "npm install",
   "framework": "vite",
   "regions": ["hkg1"],
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs22.x"
+    }
+  },
   "routes": [
     {
       "src": "/assets/(.*)",

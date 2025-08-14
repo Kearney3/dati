@@ -44,7 +44,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '22'
+        node-version: '24'
         cache: 'npm'
         
     - name: Install dependencies
@@ -57,6 +57,31 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dist-other-platforms
+        path: dist/
+
+  build-vercel:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js for Vercel
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application for Vercel
+      run: npm run build
+        
+    - name: Upload build artifacts for Vercel
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-vercel
         path: dist/
 
   # 部署到GitHub Pages
@@ -97,7 +122,7 @@ jobs:
 
   # 部署到Vercel
   deploy-vercel:
-    needs: build-other-platforms
+    needs: build-vercel
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
@@ -131,6 +156,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Setup Node.js for Vercel
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        
+    - name: Configure for Vercel
+      run: |
+        # 临时修改 package.json 以适配 Vercel 的 Node.js 版本要求
+        cp package.json package.json.backup
+        sed -i 's/"node": ">=24.0.0"/"node": "22.x"/' package.json
+        echo "✅ 已配置为 Vercel 兼容的 Node.js 版本"
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build for Vercel
+      run: npm run build
+      
     - name: Deploy to Vercel
       id: deploy
       uses: amondnet/vercel-action@v25
@@ -139,6 +183,12 @@ jobs:
         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         vercel-args: '--prod'
+        
+    - name: Restore package.json
+      run: |
+        # 恢复原始的 package.json
+        mv package.json.backup package.json
+        echo "✅ 已恢复原始的 package.json 配置"
         
     - name: Comment deployment URL
       uses: actions/github-script@v7
