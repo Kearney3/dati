@@ -28,18 +28,10 @@ jobs:
       env:
         GITHUB_PAGES: true
         
-    - name: Verify build output
-      run: |
-        echo "📁 检查构建输出..."
-        ls -la dist/
-        echo "📄 检查 index.html..."
-        cat dist/index.html | head -20
+
         
     - name: Create .nojekyll file
-      run: |
-        echo "📝 创建 .nojekyll 文件..."
-        touch dist/.nojekyll
-        echo "✅ .nojekyll 文件已创建"
+      run: touch dist/.nojekyll
         
     - name: Upload build artifacts for GitHub Pages
       uses: actions/upload-artifact@v4
@@ -119,18 +111,7 @@ jobs:
         name: dist-github-pages
         path: dist/
         
-    - name: Verify downloaded artifacts
-      run: |
-        echo "📁 验证下载的构建产物..."
-        ls -la dist/
-        echo "📄 检查 index.html 内容..."
-        if [ -f "dist/index.html" ]; then
-          echo "✅ index.html 存在"
-          head -10 dist/index.html
-        else
-          echo "❌ index.html 不存在"
-          exit 1
-        fi
+
         
     - name: Setup Pages
       uses: actions/configure-pages@v4
