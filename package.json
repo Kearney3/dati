@@ -24,13 +24,19 @@
   ],
   "author": "Kearney",
   "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "deploy:netlify": "./scripts/deploy-netlify.sh",
+    "deploy:preview": "npm run build && netlify deploy --dir=dist",
+    "deploy:prod": "npm run build && netlify deploy --prod --dir=dist"
   },
   "dependencies": {
     "clsx": "^2.0.0",
@@ -44,13 +50,8 @@
     "@types/node": "^24.1.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.14",
-    "eslint": "^8.45.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.3",
     "postcss": "^8.4.27",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",

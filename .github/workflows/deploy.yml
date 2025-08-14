@@ -17,7 +17,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '24'
         cache: 'npm'
         
     - name: Install dependencies
@@ -123,6 +123,67 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: `🚀 **Vercel部署成功!**\n\n预览链接: ${{ steps.deploy.outputs.preview-url }}`
+          })
+
+  # 部署到Netlify
+  deploy-netlify:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Check Netlify secrets
+      run: |
+        echo "🔍 检查Netlify配置..."
+        
+        # 检查必要的secrets是否配置
+        if [ -z "${{ secrets.NETLIFY_AUTH_TOKEN }}" ]; then
+          echo "❌ NETLIFY_AUTH_TOKEN 未配置"
+          echo "请按照下面的说明配置Netlify Auth Token"
+          exit 1
+        fi
+        
+        if [ -z "${{ secrets.NETLIFY_SITE_ID }}" ]; then
+          echo "❌ NETLIFY_SITE_ID 未配置"
+          echo "请按照下面的说明配置Netlify Site ID"
+          exit 1
+        fi
+        
+        echo "✅ Netlify secrets 配置正确"
+        echo "🚀 开始部署到Netlify..."
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+        
+    - name: Deploy to Netlify
+      id: deploy
+      uses: nwtgck/actions-netlify@v2.0
+      with:
+        publish-dir: './dist'
+        production-branch: main
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: "Deploy from GitHub Actions"
+        enable-pull-request-comment: true
+        enable-commit-comment: true
+        overwrites-pull-request-comment: true
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      timeout-minutes: 1
+      
+    - name: Comment deployment URL
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 **Netlify部署成功!**\n\n预览链接: ${{ steps.deploy.outputs.url }}`
           })
 
   # 构建Docker镜像 (Docker Hub)

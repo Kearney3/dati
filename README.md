@@ -225,7 +225,17 @@ vercel --prod
 npm install -g netlify-cli
 npm run build
 netlify deploy --prod --dir=dist
+
+# 或者使用项目提供的脚本
+npm run deploy:netlify
+npm run deploy:preview  # 预览部署
+npm run deploy:prod     # 生产部署
 ```
+
+**自动化部署配置**：
+1. 按照 [NETLIFY_SETUP.md](NETLIFY_SETUP.md) 配置 GitHub Secrets
+2. 推送代码到 main 分支即可自动部署
+3. 支持 Pull Request 预览部署
 
 #### Docker 部署
 ```bash
@@ -257,6 +267,8 @@ docker compose --profile proxy up -d
 2. 创建功能分支
 3. 提交更改
 4. 创建 Pull Request
+
+
 
 ### 提交规范
 ```
@@ -291,7 +303,7 @@ chore: 构建过程或辅助工具的变动
 
 ---
 
-⭐ 如果这个项目对您有帮助，请给我们一个星标！ 
+⭐ 如果这个项目对您有帮助，请给我们一个星标！
 
 <a href="https://www.star-history.com/#kearney3/dati&Date">
 
