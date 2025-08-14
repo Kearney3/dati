@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-    build-github-pages:
+  build-github-pages:
     runs-on: ubuntu-latest
     
     steps:
