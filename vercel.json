@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "dati",
   "builds": [
     {
       "src": "package.json",
@@ -42,10 +41,5 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite",
-  "functions": {},
-  "regions": ["hkg1"],
-  "github": {
-    "enabled": true,
-    "silent": true
-  }
+  "regions": ["hkg1"]
 }
