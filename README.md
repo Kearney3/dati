@@ -17,9 +17,19 @@
   </p>
   <p>
     <a href="https://kearney3.github.io/dati/" target="_blank" style="font-size: 20px; font-weight: bold; text-decoration: none;">
-      👉 在线体验地址（Demo）
+      👉 在线体验地址（Github Pages）
     </a>
   </p>
+  <p>
+    <a href="https://datiapp.vercel.app/" target="_blank" style="font-size: 18px; font-weight: bold; text-decoration: none; margin-right: 16px;">
+      🚀 Vercel 访问地址
+    </a>
+    <a href="https://datiapp.netlify.app/" target="_blank" style="font-size: 18px; font-weight: bold; text-decoration: none;">
+      🌐 Netlify 访问地址
+    </a>
+  </p>
+
+  
 </div>
 <div align="center">
 
@@ -210,54 +220,39 @@ npm run preview
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Kearney3/dati)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/Kearney3/dati)
 
-### 📦 命令行部署
+### 📦 快速部署
 
 #### Vercel 部署（推荐）
 ```bash
-# 安装并部署
 npm install -g vercel
 vercel --prod
 ```
 
 #### Netlify 部署
 ```bash
-# 安装CLI并部署
 npm install -g netlify-cli
 npm run build
 netlify deploy --prod --dir=dist
-
-# 或者使用项目提供的脚本
-npm run deploy:netlify
-npm run deploy:preview  # 预览部署
-npm run deploy:prod     # 生产部署
 ```
-
-**自动化部署配置**：
-1. 按照 [NETLIFY_SETUP.md](NETLIFY_SETUP.md) 配置 GitHub Secrets
-2. 推送代码到 main 分支即可自动部署
-3. 支持 Pull Request 预览部署
 
 #### Docker 部署
 ```bash
-# 使用Docker
-docker build -f deploy/Dockerfile -t dati .
-docker run -d -p 5080:5080 --name dati dati
-
-# 使用Docker Compose（推荐）
 cd deploy && docker compose up -d
-
-# 启动包含反向代理的完整环境
-docker compose --profile proxy up -d
 ```
 
-#### GitHub Pages 部署
-推送到 main 分支即可自动部署。访问: `https://username.github.io/dati`
+### 📖 详细部署指南
 
-**注意**：GitHub Pages 部署需要配置正确的 base 路径，项目已自动适配。
+更多部署选项、自动化配置、故障排除等详细说明，请查看：
 
-### ⚙️ 详细配置
+**[🚀 完整部署指南](DEPLOYMENT.md)**
 
-更多部署选项和高级配置请查看：[📖 完整部署指南](deploy/README.md)
+包含以下内容：
+- 🌟 一键部署配置
+- 🔧 自动化部署设置
+- 🐳 Docker 详细配置
+- 📚 GitHub Pages 部署
+- ⚙️ 高级配置选项
+- 🔍 故障排除指南
 
 
 ## 🤝 贡献指南

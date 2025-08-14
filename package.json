@@ -33,10 +33,7 @@
     "build": "vite build",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
-    "vercel-build": "npm run build",
-    "deploy:netlify": "./scripts/deploy-netlify.sh",
-    "deploy:preview": "npm run build && netlify deploy --dir=dist",
-    "deploy:prod": "npm run build && netlify deploy --prod --dir=dist"
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "clsx": "^2.0.0",
