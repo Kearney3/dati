@@ -27,6 +27,8 @@ interface QuizScreenProps {
   onQuizStateChange: (state: any) => void;
   onComplete: () => void;
   onExit: () => void;
+  isWrongQuestionsMode?: boolean;
+  onBackToFullQuiz?: () => void;
 }
 
 export const QuizScreen = ({ 
@@ -35,7 +37,9 @@ export const QuizScreen = ({
   quizState, 
   onQuizStateChange, 
   onComplete, 
-  onExit 
+  onExit,
+  isWrongQuestionsMode = false,
+  onBackToFullQuiz
 }: QuizScreenProps) => {
   const [showNavPanel, setShowNavPanel] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -45,6 +49,7 @@ export const QuizScreen = ({
   const [navButtonsOnTop, setNavButtonsOnTop] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileHint, setShowMobileHint] = useState(true);
+  const [showWrongQuestionsHint, setShowWrongQuestionsHint] = useState(true);
   const [swipeEnabled, setSwipeEnabled] = useState(true);
   const [showQuizSettings, setShowQuizSettings] = useState(false);
   
@@ -673,6 +678,36 @@ export const QuizScreen = ({
         </div>
       )}
 
+      {/* 错题模式提示横幅 */}
+      {isWrongQuestionsMode && showWrongQuestionsHint && (
+        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+              <span className="text-lg">🎯</span>
+              <span>错题练习模式：当前正在练习 {questions.length} 道错题</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {onBackToFullQuiz && (
+                <button
+                  onClick={onBackToFullQuiz}
+                  className="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 font-medium text-sm"
+                >
+                  返回完整题库
+                </button>
+              )}
+              <button
+                onClick={() => setShowWrongQuestionsHint(false)}
+                className="text-orange-400 hover:text-orange-600 dark:hover:text-orange-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
 
       {/* Header */}
@@ -842,6 +877,27 @@ export const QuizScreen = ({
                 {!swipeEnabled && (
                   <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs text-yellow-700 dark:text-yellow-300">
                     💡 已禁用滑动切换，请使用切题按钮切换题目
+                  </div>
+                )}
+
+                {/* 错题模式返回完整题库按钮 */}
+                {isWrongQuestionsMode && onBackToFullQuiz && (
+                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🎯</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">错题练习模式</span>
+                      </div>
+                      <button
+                        onClick={onBackToFullQuiz}
+                        className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-xs font-medium transition-colors"
+                      >
+                        返回完整题库
+                      </button>
+                    </div>
+                    <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs text-orange-700 dark:text-orange-300">
+                      💡 当前正在练习 {questions.length} 道错题，点击按钮可返回完整题库
+                    </div>
                   </div>
                 )}
               </div>

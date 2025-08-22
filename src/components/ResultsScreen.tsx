@@ -10,6 +10,7 @@ interface ResultsScreenProps {
   settings: QuizSettings;
   examSettings?: any;
   onRetry: () => void;
+  onRetryWrongQuestions: () => void;
   onReview: () => void;
   onBackToUpload: () => void;
   onBackToQuiz: () => void;
@@ -21,6 +22,7 @@ export const ResultsScreen = ({
   settings,
   examSettings,
   onRetry, 
+  onRetryWrongQuestions,
   onReview, 
   onBackToUpload,
   onBackToQuiz
@@ -32,7 +34,9 @@ export const ResultsScreen = ({
   const stats = settings.mode === 'exam' && examSettings 
     ? getExamStats(results, examSettings)
     : getQuizStats(results);
-
+  
+  // 计算错题数量
+  const wrongQuestionsCount = results.filter(result => !result.isCorrect).length;
   const handleExportExcel = () => {
     exportToExcel({ questions, results, settings, examSettings, stats }, exportFormat);
     setShowExportDialog(false);
@@ -57,12 +61,18 @@ export const ResultsScreen = ({
 
       {/* Stats */}
       <div className="card p-8 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
           <div>
             <div className="text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">
               {stats.correct}
             </div>
             <div className="text-gray-600 dark:text-gray-400">答对题目</div>
+          </div>
+          <div>
+            <div className="text-4xl font-bold text-danger-600 dark:text-danger-400 mb-2">
+              {wrongQuestionsCount}
+            </div>
+            <div className="text-gray-600 dark:text-gray-400">错题数量</div>
           </div>
           <div>
             <div className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
@@ -155,6 +165,12 @@ export const ResultsScreen = ({
           <RefreshCw className="w-4 h-4 mr-2" />
           重新答题
         </button>
+        {wrongQuestionsCount > 0 && (
+          <button onClick={onRetryWrongQuestions} className="btn btn-danger">
+            <XCircle className="w-4 h-4 mr-2" />
+            错题重练 ({wrongQuestionsCount})
+          </button>
+        )}
         <button onClick={onBackToQuiz} className="btn btn-info">
           <ArrowLeft className="w-4 h-4 mr-2" />
           返回答题

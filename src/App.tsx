@@ -51,6 +51,10 @@ export default function App() {
     questionResults: [] as QuestionResult[],
     isCompleted: false
   });
+  
+  // 添加状态来跟踪是否在错题模式
+  const [isWrongQuestionsMode, setIsWrongQuestionsMode] = useState(false);
+  const [originalQuestions, setOriginalQuestions] = useState<Question[]>([]);
   const [examSettings, setExamSettings] = useState<ExamSettings | undefined>(undefined);
   
   // 新增：多工作表配置状态
@@ -271,6 +275,8 @@ export default function App() {
     setQuestions(allQuestions);
     const generatedQuiz = generateQuizData(allQuestions, settings, examSettings);
     setQuizQuestions(generatedQuiz);
+    setOriginalQuestions(generatedQuiz); // 保存原始题目
+    setIsWrongQuestionsMode(false); // 重置错题模式
     setQuizState({
       currentQuestionIndex: 0,
       userAnswers: new Array(generatedQuiz.length).fill(null),
@@ -278,6 +284,9 @@ export default function App() {
       isCompleted: false
     });
     setCurrentScreen('quiz');
+    
+    // 滚动到页面顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleQuizComplete = () => {
@@ -293,6 +302,8 @@ export default function App() {
   const handleRetry = () => {
     const generatedQuiz = generateQuizData(questions, settings, examSettings);
     setQuizQuestions(generatedQuiz);
+    setOriginalQuestions(generatedQuiz); // 保存原始题目
+    setIsWrongQuestionsMode(false); // 重置错题模式
     setQuizState({
       currentQuestionIndex: 0,
       userAnswers: new Array(generatedQuiz.length).fill(null),
@@ -300,6 +311,52 @@ export default function App() {
       isCompleted: false
     });
     setCurrentScreen('quiz');
+    
+    // 滚动到页面顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleRetryWrongQuestions = () => {
+    // 筛选出错误的题目
+    const wrongQuestions = quizQuestions.filter((_, index) => 
+      !quizState.questionResults[index]?.isCorrect
+    );
+    
+    if (wrongQuestions.length === 0) {
+      showAlert('info', '没有错题', '恭喜您！所有题目都答对了，没有错题需要重新练习。');
+      return;
+    }
+    
+    // 设置错题为新的答题题目
+    setQuizQuestions(wrongQuestions);
+    setIsWrongQuestionsMode(true); // 设置为错题模式
+    setQuizState({
+      currentQuestionIndex: 0,
+      userAnswers: new Array(wrongQuestions.length).fill(null),
+      questionResults: [],
+      isCompleted: false
+    });
+    setCurrentScreen('quiz');
+    
+    // 滚动到页面顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackToFullQuiz = () => {
+    if (originalQuestions.length > 0) {
+      setQuizQuestions(originalQuestions);
+      setIsWrongQuestionsMode(false);
+      setQuizState({
+        currentQuestionIndex: 0,
+        userAnswers: new Array(originalQuestions.length).fill(null),
+        questionResults: [],
+        isCompleted: false
+      });
+      setCurrentScreen('quiz');
+      
+      // 滚动到页面顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleBackToUpload = () => {
@@ -313,6 +370,8 @@ export default function App() {
       questionResults: [],
       isCompleted: false
     });
+    setIsWrongQuestionsMode(false);
+    setOriginalQuestions([]);
   };
 
   return (
@@ -462,6 +521,8 @@ export default function App() {
               onQuizStateChange={setQuizState}
               onComplete={handleQuizComplete}
               onExit={handleBackToUpload}
+              isWrongQuestionsMode={isWrongQuestionsMode}
+              onBackToFullQuiz={handleBackToFullQuiz}
             />
           )}
 
@@ -472,9 +533,14 @@ export default function App() {
               settings={settings}
               examSettings={examSettings}
               onRetry={handleRetry}
+              onRetryWrongQuestions={handleRetryWrongQuestions}
               onReview={() => setCurrentScreen('review')}
               onBackToUpload={handleBackToUpload}
-              onBackToQuiz={() => setCurrentScreen('quiz')}
+              onBackToQuiz={() => {
+                setCurrentScreen('quiz');
+                // 滚动到页面顶部
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
           )}
 
