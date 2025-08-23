@@ -133,7 +133,21 @@ netlify deploy --prod --dir=dist
 
 ## 🐳 Docker 部署
 
-### 使用 Docker Compose（推荐）
+### 使用 Docker Hub 镜像（推荐）
+
+项目已发布到 Docker Hub，您可以直接使用官方镜像：
+
+```bash
+# 拉取并运行最新版本
+docker run -d -p 5080:5080 --name dati kearney/dati:latest
+
+# 或指定版本
+docker run -d -p 5080:5080 --name dati kearney/dati:v1.0.0
+```
+
+**Docker Hub 地址**：[https://hub.docker.com/r/kearney/dati](https://hub.docker.com/r/kearney/dati)
+
+### 使用 Docker Compose
 
 ```bash
 # 进入部署目录
@@ -168,8 +182,22 @@ docker logs dati
 - **数据持久化**：支持挂载本地目录
 - **反向代理**：包含 Nginx 配置
 - **移动端访问**：支持局域网访问
+- **镜像仓库**：[Docker Hub](https://hub.docker.com/r/kearney/dati)
 
 详细配置请查看 [deploy/README.md](deploy/README.md)
+
+### Docker Tag 配置
+
+关于Docker镜像tag的详细配置说明，请查看：
+
+**[🐳 Docker Tag 配置指南](DOCKER_TAGS.md)**
+
+包含以下内容：
+- 📋 当前tag策略说明
+- 🚀 不同场景下的tag生成规则
+- ⚙️ 自定义tag配置方法
+- 🔧 环境变量配置
+- 📝 最佳实践建议
 
 ## 📚 GitHub Pages 部署
 

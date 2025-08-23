@@ -295,14 +295,24 @@ jobs:
       id: repo-name
       run: echo "name=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
         
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ secrets.DOCKER_USERNAME }}/dati
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+        
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./deploy/Dockerfile
         push: true
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/dati:latest
-          ${{ secrets.DOCKER_USERNAME }}/dati:${{ github.sha }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max

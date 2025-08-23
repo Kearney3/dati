@@ -31,6 +31,11 @@
       ☁️ Cloudflare Pages 访问地址
     </a>
   </p>
+  <p>
+    <a href="https://hub.docker.com/r/kearney/dati" target="_blank" style="font-size: 18px; font-weight: bold; text-decoration: none;">
+      🐳 Docker Hub 镜像地址
+    </a>
+  </p>
 
   
 </div>
@@ -164,6 +169,7 @@ npm run preview
 
 ### 部署
 - **Docker** - 容器化部署
+- **Docker Hub** - 镜像仓库
 - **Netlify** - 静态网站托管
 - **Nginx** - Web服务器
 
@@ -247,7 +253,11 @@ netlify deploy --prod --dir=dist
 
 #### Docker 部署
 ```bash
+# 使用 Docker Compose（推荐）
 cd deploy && docker compose up -d
+
+# 或直接使用 Docker Hub 镜像
+docker run -d -p 5080:5080 --name dati kearney/dati:latest
 ```
 
 ### 📖 详细部署指南
