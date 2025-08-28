@@ -20,7 +20,9 @@ interface ExportData {
 // 创建答题情况工作表数据
 const createQuizDetailsSheet = (data: ExportData) => {
   const sheetData = [
-    ['题号', '题目类型', '题目内容', '选项A', '选项B', '选项C', '选项D', '选项E', '选项F', '您的答案', '正确答案', '是否正确', '解析']
+    data.settings.mode === 'exam' && data.examSettings
+      ? ['题号', '题目类型', '题目内容', '选项A', '选项B', '选项C', '选项D', '选项E', '选项F', '每题分值', '您的答案', '正确答案', '是否正确', '解析']
+      : ['题号', '题目类型', '题目内容', '选项A', '选项B', '选项C', '选项D', '选项E', '选项F', '您的答案', '正确答案', '是否正确', '解析']
   ];
 
   // 添加每道题的详细记录
@@ -45,21 +47,51 @@ const createQuizDetailsSheet = (data: ExportData) => {
     const formattedUserAnswer = formatJudgmentAnswer(result.userAnswer, question, data.settings);
     const formattedCorrectAnswer = formatCorrectAnswer(question, data.settings);
     
-    sheetData.push([
-      String(index + 1),
-      question.type,
-      question.text,
-      optionA,
-      optionB,
-      optionC,
-      optionD,
-      optionE,
-      optionF,
-      formattedUserAnswer,
-      formattedCorrectAnswer,
-      result.isCorrect ? '正确' : '错误',
-      question.explanation || ''
-    ]);
+    // 获取每题分值（考试模式）
+    let questionScore = '';
+    if (data.settings.mode === 'exam' && data.examSettings) {
+      const config = data.examSettings.configs.find(c => c.questionType === question.type);
+      if (config) {
+        questionScore = String(config.score);
+      }
+    }
+    
+    if (data.settings.mode === 'exam' && data.examSettings) {
+      // 考试模式：包含每题分值
+      sheetData.push([
+        String(index + 1),
+        question.type,
+        question.text,
+        optionA,
+        optionB,
+        optionC,
+        optionD,
+        optionE,
+        optionF,
+        questionScore,
+        formattedUserAnswer,
+        formattedCorrectAnswer,
+        result.isCorrect ? '正确' : '错误',
+        question.explanation || ''
+      ]);
+    } else {
+      // 非考试模式：不包含每题分值
+      sheetData.push([
+        String(index + 1),
+        question.type,
+        question.text,
+        optionA,
+        optionB,
+        optionC,
+        optionD,
+        optionE,
+        optionF,
+        formattedUserAnswer,
+        formattedCorrectAnswer,
+        result.isCorrect ? '正确' : '错误',
+        question.explanation || ''
+      ]);
+    }
   });
 
   return sheetData;
@@ -78,32 +110,63 @@ const createQuizSummarySheet = (data: ExportData) => {
     ...(data.settings.mode === 'exam' && data.examSettings && data.stats.totalScore !== undefined ? [['得分', `${Number(data.stats.totalScore).toFixed(1)}/${Number(data.stats.maxScore).toFixed(1)}`]] : []),
     [''],
     ['题型统计'],
-    ['题型', '题目数量', '答对数量', '正确率']
+    data.settings.mode === 'exam' && data.examSettings 
+      ? ['题型', '题目数量', '答对数量', '正确率', '得分/满分']
+      : ['题型', '题目数量', '答对数量', '正确率']
   ];
 
   // 按题型统计
-  const typeStats: { [key: string]: { total: number; correct: number } } = {};
+  const typeStats: { [key: string]: { total: number; correct: number; score?: number; maxScore?: number } } = {};
+  
   data.questions.forEach((question, index) => {
     const result = data.results[index];
     const type = question.type;
     if (!typeStats[type]) {
       typeStats[type] = { total: 0, correct: 0 };
+      
+      // 如果是考试模式，计算该题型的分数配置
+      if (data.settings.mode === 'exam' && data.examSettings) {
+        const config = data.examSettings.configs.find(c => c.questionType === type);
+        if (config) {
+          typeStats[type].maxScore = config.score * config.count;
+        }
+      }
     }
     typeStats[type].total++;
     if (result.isCorrect) {
       typeStats[type].correct++;
+      // 如果是考试模式，累加得分
+      if (data.settings.mode === 'exam' && data.examSettings) {
+        const config = data.examSettings.configs.find(c => c.questionType === type);
+        if (config) {
+          typeStats[type].score = (typeStats[type].score || 0) + config.score;
+        }
+      }
     }
   });
 
   // 添加题型统计
   Object.entries(typeStats).forEach(([type, stats]) => {
     const accuracy = ((stats.correct / stats.total) * 100).toFixed(1);
-    sheetData.push([
-      type,
-      stats.total,
-      stats.correct,
-      `${accuracy}%`
-    ]);
+    
+    if (data.settings.mode === 'exam' && data.examSettings && stats.score !== undefined && stats.maxScore !== undefined) {
+      // 考试模式：包含分数信息
+      sheetData.push([
+        type,
+        stats.total,
+        stats.correct,
+        `${accuracy}%`,
+        `${Number(stats.score).toFixed(1)}/${Number(stats.maxScore).toFixed(1)}`
+      ]);
+    } else {
+      // 非考试模式：不包含分数信息
+      sheetData.push([
+        type,
+        stats.total,
+        stats.correct,
+        `${accuracy}%`
+      ]);
+    }
   });
 
   sheetData.push(['']);
@@ -170,6 +233,25 @@ export const exportToHTML = (data: ExportData) => {
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { text-align: center; margin-bottom: 30px; }
+        .header .export-buttons { margin-top: 15px; }
+        .export-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 0 5px;
+        }
+        .excel-btn {
+            background: #217346;
+            color: white;
+        }
+        .excel-btn:hover {
+            background: #1e6b3d;
+            transform: translateY(-1px);
+        }
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
         .stat-value { font-size: 2em; font-weight: bold; color: #007bff; }
@@ -241,6 +323,11 @@ export const exportToHTML = (data: ExportData) => {
     <div class="header">
         <h1>答题结果报告</h1>
         <p>生成时间: ${new Date().toLocaleString('zh-CN')}</p>
+        <div class="export-buttons">
+            <button onclick="exportToExcel()" class="export-btn excel-btn">
+                📊 导出到Excel
+            </button>
+        </div>
     </div>
 
     <div class="stats">
@@ -380,7 +467,148 @@ export const exportToHTML = (data: ExportData) => {
         没有找到符合条件的题目
     </div>
 
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <script>
+        // 导出Excel功能
+        function exportToExcel() {
+            // 获取页面数据
+            const questions = [];
+            const results = [];
+            const stats = {};
+            
+            // 从页面提取统计数据
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach(card => {
+                const value = card.querySelector('.stat-value').textContent;
+                const label = card.querySelector('.stat-label').textContent;
+                stats[label] = value;
+            });
+            
+            // 从页面提取题目数据
+            const questionElements = document.querySelectorAll('.question');
+            questionElements.forEach((element, index) => {
+                const questionText = element.querySelector('p').textContent;
+                const questionType = element.querySelector('.question-type').textContent;
+                const userAnswer = element.querySelector('.user-answer').textContent.replace('您的答案: ', '');
+                const correctAnswer = element.querySelector('.correct-answer').textContent.replace('正确答案: ', '');
+                const isCorrect = element.classList.contains('correct');
+                
+                // 提取选项
+                const options = [];
+                const optionElements = element.querySelectorAll('.option');
+                optionElements.forEach(opt => {
+                    const optionText = opt.querySelector('span').textContent;
+                    options.push(optionText);
+                });
+                
+                questions.push({
+                    id: index + 1,
+                    text: questionText,
+                    type: questionType,
+                    options: options,
+                    answer: correctAnswer
+                });
+                
+                results.push({
+                    questionId: index + 1,
+                    isCorrect: isCorrect,
+                    userAnswer: userAnswer,
+                    correctAnswer: correctAnswer,
+                    questionType: questionType
+                });
+            });
+            
+            // 创建工作簿
+            const workbook = XLSX.utils.book_new();
+            
+            // 创建答题情况工作表
+            const quizDetailsData = [
+                ['题号', '题目类型', '题目内容', '选项A', '选项B', '选项C', '选项D', '选项E', '选项F', '您的答案', '正确答案', '是否正确']
+            ];
+            
+            questions.forEach((question, index) => {
+                const result = results[index];
+                const row = [
+                    String(index + 1),
+                    question.type,
+                    question.text,
+                    question.options[0] || '',
+                    question.options[1] || '',
+                    question.options[2] || '',
+                    question.options[3] || '',
+                    question.options[4] || '',
+                    question.options[5] || '',
+                    result.userAnswer,
+                    result.correctAnswer,
+                    result.isCorrect ? '正确' : '错误'
+                ];
+                quizDetailsData.push(row);
+            });
+            
+            const quizDetailsSheet = XLSX.utils.aoa_to_sheet(quizDetailsData);
+            XLSX.utils.book_append_sheet(workbook, quizDetailsSheet, '答题情况');
+            
+            // 创建答题总结工作表
+            const quizSummaryData = [
+                ['答题总结报告'],
+                [''],
+                ['总体统计'],
+                ['总题目数', stats['总题目数'] || ''],
+                ['答对题目', stats['答对题目'] || ''],
+                ['答错题目', stats['答错题目'] || ''],
+                ['正确率', stats['正确率'] || '']
+            ];
+            
+            quizSummaryData.push(['']);
+            quizSummaryData.push(['题型统计']);
+            quizSummaryData.push(['题型', '题目数量', '答对数量', '正确率']);
+            
+            // 按题型统计
+            const typeStats = {};
+            questions.forEach((question, index) => {
+                const result = results[index];
+                const type = question.type;
+                if (!typeStats[type]) {
+                    typeStats[type] = { total: 0, correct: 0 };
+                }
+                typeStats[type].total++;
+                if (result.isCorrect) {
+                    typeStats[type].correct++;
+                }
+            });
+            
+            Object.entries(typeStats).forEach(function(entry) {
+                const type = entry[0];
+                const typeStat = entry[1];
+                const accuracy = ((typeStat.correct / typeStat.total) * 100).toFixed(1);
+                
+                quizSummaryData.push([
+                    type,
+                    typeStat.total,
+                    typeStat.correct,
+                    accuracy + '%'
+                ]);
+            });
+            
+            quizSummaryData.push(['']);
+            quizSummaryData.push(['答题时间', new Date().toLocaleString('zh-CN')]);
+            
+            const quizSummarySheet = XLSX.utils.aoa_to_sheet(quizSummaryData);
+            XLSX.utils.book_append_sheet(workbook, quizSummarySheet, '答题总结');
+            
+            // 导出Excel文件
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', '答题结果_' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.xlsx');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
         // 筛选功能
         function filterQuestions() {
             const correctnessFilter = document.getElementById('correctnessFilter').value;
