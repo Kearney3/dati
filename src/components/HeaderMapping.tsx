@@ -96,8 +96,8 @@ export const HeaderMapping = ({
               className="input"
             >
               <option value="">-- 请选择 --</option>
-              {headers.map((header) => (
-                <option key={header} value={header}>
+              {headers.map((header, index) => (
+                <option key={`${header}-${index}`} value={header}>
                   {header}
                 </option>
               ))}

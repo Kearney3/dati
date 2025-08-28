@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, RefreshCw, ArrowLeft, Eye, CheckCircle, XCircle, Download, Home } from 'lucide-react';
+import { Trophy, RefreshCw, ArrowLeft, Eye, CheckCircle, XCircle, Download, Home, EyeOff } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { getQuizStats, getExamStats, formatJudgmentAnswer, formatCorrectAnswer } from '../utils/quiz';
 import { exportToExcel, exportToHTML } from '../utils/export';
@@ -31,6 +31,7 @@ export const ResultsScreen = ({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState<'xlsx' | 'csv'>('xlsx');
+  const [showExplanation, setShowExplanation] = useState(false);
   const stats = settings.mode === 'exam' && examSettings 
     ? getExamStats(results, examSettings)
     : getQuizStats(results);
@@ -46,17 +47,17 @@ export const ResultsScreen = ({
     <div className="max-w-4xl mx-auto min-w-[350px]">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="p-4 rounded-full bg-primary-100 dark:bg-primary-900/30">
+        <div className="flex flex-col items-center mb-4">
+          <div className="p-4 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-4">
             <Trophy className="w-12 h-12 text-primary-600 dark:text-primary-400" />
           </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            答题完成
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            恭喜您完成了本次答题
+          </p>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          答题完成！
-        </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
-          恭喜您完成了本次答题
-        </p>
       </div>
 
       {/* Stats */}
@@ -93,9 +94,30 @@ export const ResultsScreen = ({
 
       {/* Results Grid */}
       <div className="card p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-          答题卡 (悬浮查看详情)
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center sm:text-left">
+            答题卡 (悬浮查看详情)
+          </h3>
+          <div className="flex items-center justify-center sm:justify-end gap-2">
+            <button
+              onClick={() => setShowExplanation(!showExplanation)}
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                showExplanation
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              title={showExplanation ? '隐藏解析' : '显示解析'}
+            >
+              {showExplanation ? (
+                <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" />
+              ) : (
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+              )}
+                              <span className="hidden sm:inline">{showExplanation ? '隐藏解析' : '显示解析'}</span>
+                <span className="sm:hidden">{showExplanation ? '隐藏' : '显示'}</span>
+            </button>
+          </div>
+        </div>
         <div className="grid gap-2 overflow-x-hidden"
         style={{
           gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))'
@@ -220,45 +242,64 @@ export const ResultsScreen = ({
             <p className="text-xs text-gray-300">
               正确答案: {formatCorrectAnswer(questions[hoveredQuestion], settings)}
             </p>
+            {showExplanation && questions[hoveredQuestion].explanation && (
+              <div className="mt-2 pt-2 border-t border-gray-700">
+                <p className="text-xs text-gray-400 mb-1">解析:</p>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  {questions[hoveredQuestion].explanation}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button onClick={onReview} className="btn btn-primary">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {/* 答题回顾按钮独占一行 */}
+        <button onClick={onReview} className="btn btn-primary flex items-center justify-center whitespace-nowrap sm:col-span-2 lg:col-span-3">
           <Eye className="w-4 h-4 mr-2" />
           答题回顾
         </button>
-        <button onClick={onRetry} className="btn btn-success">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          重新答题
-        </button>
-        {wrongQuestionsCount > 0 && (
-          <button onClick={onRetryWrongQuestions} className="btn btn-danger">
-            <XCircle className="w-4 h-4 mr-2" />
-            错题重练 ({wrongQuestionsCount})
+        
+        {/* 重新答题、错题重练、返回答题共处一行 */}
+        <div className="sm:col-span-2 lg:col-span-3 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <button onClick={onRetry} className="btn btn-success flex items-center justify-center whitespace-nowrap flex-1">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            重新答题
           </button>
-        )}
-        <button onClick={onBackToQuiz} className="btn btn-info">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          返回答题
-        </button>
-        <button 
-          onClick={() => setShowExportDialog(true)}
-          className="btn btn-warning"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          导出Excel
-        </button>
-        <button 
-          onClick={() => exportToHTML({ questions, results, settings, examSettings, stats })}
-          className="btn btn-info"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          导出HTML
-        </button>
-        <button onClick={onBackToUpload} className="btn btn-secondary">
+          {wrongQuestionsCount > 0 && (
+            <button onClick={onRetryWrongQuestions} className="btn btn-danger flex items-center justify-center whitespace-nowrap flex-1">
+              <XCircle className="w-4 h-4 mr-2" />
+              错题重练 ({wrongQuestionsCount})
+            </button>
+          )}
+          <button onClick={onBackToQuiz} className="btn btn-info flex items-center justify-center whitespace-nowrap flex-1">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            返回答题
+          </button>
+        </div>
+        
+        {/* 导出HTML和EXCEL的两个按钮共处一行 */}
+        <div className="sm:col-span-2 lg:col-span-3 flex gap-3 sm:gap-4">
+          <button 
+            onClick={() => setShowExportDialog(true)}
+            className="btn btn-warning flex items-center justify-center whitespace-nowrap flex-1"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            导出Excel
+          </button>
+          <button 
+            onClick={() => exportToHTML({ questions, results, settings, examSettings, stats })}
+            className="btn btn-info flex items-center justify-center whitespace-nowrap flex-1"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            导出HTML
+          </button>
+        </div>
+        
+        {/* 返回主页按钮独占一行 */}
+        <button onClick={onBackToUpload} className="btn btn-secondary flex items-center justify-center whitespace-nowrap sm:col-span-2 lg:col-span-3">
           <Home className="w-4 h-4 mr-2" />
           返回主页
         </button>
