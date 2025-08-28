@@ -75,7 +75,7 @@ const createQuizSummarySheet = (data: ExportData) => {
     ['答对题目', data.stats.correct],
     ['答错题目', data.stats.incorrect],
     ['正确率', `${data.stats.accuracy}%`],
-    ...(data.stats.totalScore !== undefined ? [['得分', `${Number(data.stats.totalScore).toFixed(1)}/${Number(data.stats.maxScore).toFixed(1)}`]] : []),
+    ...(data.settings.mode === 'exam' && data.examSettings && data.stats.totalScore !== undefined ? [['得分', `${Number(data.stats.totalScore).toFixed(1)}/${Number(data.stats.maxScore).toFixed(1)}`]] : []),
     [''],
     ['题型统计'],
     ['题型', '题目数量', '答对数量', '正确率']
@@ -196,9 +196,38 @@ export const exportToHTML = (data: ExportData) => {
         .question-header { display: flex; justify-content-between; align-items: center; margin-bottom: 10px; }
         .question-type { background: #6c757d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; }
         .options { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; }
-        .option { margin: 5px 0; padding: 5px; }
-        .option.correct-option { background: #d4edda; border-left: 3px solid #28a745; }
-        .option.user-option { background: #fff3cd; border-left: 3px solid #ffc107; }
+        .option { 
+            margin: 5px 0; 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #e5e7eb; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .option.correct-option { 
+            background: #d1fae5; 
+            border-color: #10b981; 
+            color: #065f46; 
+        }
+        .option.user-option { 
+            background: #fef3c7; 
+            border-color: #f59e0b; 
+            color: #92400e; 
+        }
+        .option.correct-option.user-option { 
+            background: #d1fae5; 
+            border-color: #10b981; 
+            color: #065f46; 
+        }
+        .option .user-badge {
+            padding: 2px 8px;
+            background: #f59e0b;
+            color: #92400e;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+        }
         .answer { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; }
         .user-answer { color: #dc3545; }
         .correct-answer { color: #28a745; }
@@ -231,7 +260,7 @@ export const exportToHTML = (data: ExportData) => {
             <div class="stat-value">${data.stats.accuracy}%</div>
             <div class="stat-label">正确率</div>
         </div>
-        ${data.stats.totalScore !== undefined ? `
+        ${data.settings.mode === 'exam' && data.examSettings && data.stats.totalScore !== undefined ? `
         <div class="stat-card">
             <div class="stat-value">${Number(data.stats.totalScore).toFixed(1)}/${Number(data.stats.maxScore).toFixed(1)}</div>
             <div class="stat-label">得分/满分</div>
@@ -286,21 +315,37 @@ export const exportToHTML = (data: ExportData) => {
                         const letter = String.fromCharCode(65 + optIndex);
                         
                         // 判断是否为正确答案
-                        const correctAnswerFormatted = formatCorrectAnswer(question, data.settings);
-                        const isCorrect = (question.type === '判断题') 
-                            ? option === correctAnswerFormatted
-                            : option === question.answer;
+                        let isCorrect = false;
+                        if (question.type === '判断题') {
+                            const correctAnswerFormatted = formatCorrectAnswer(question, data.settings);
+                            isCorrect = option === correctAnswerFormatted;
+                        } else if (question.type === '多选题') {
+                            // 多选题：检查答案字符串中是否包含该字母
+                            const normalizedAnswer = question.answer.replace(/[,，\s]/g, '').toUpperCase();
+                            isCorrect = normalizedAnswer.includes(letter);
+                        } else {
+                            // 单选题：直接比较答案
+                            isCorrect = question.answer.toUpperCase() === letter;
+                        }
                         
                         // 判断是否为用户选答案
-                        const userAnswerFormatted = formatJudgmentAnswer(result.userAnswer, question, data.settings);
-                        const isUserAnswer = (question.type === '判断题')
-                            ? option === userAnswerFormatted
-                            : result.userAnswer && result.userAnswer.includes(letter);
+                        let isUserAnswer = false;
+                        if (question.type === '判断题') {
+                            const userAnswerFormatted = formatJudgmentAnswer(result.userAnswer, question, data.settings);
+                            isUserAnswer = option === userAnswerFormatted;
+                        } else {
+                            isUserAnswer = !!(result.userAnswer && result.userAnswer.includes(letter));
+                        }
                         
                         let className = 'option';
                         if (isCorrect) className += ' correct-option';
                         if (isUserAnswer) className += ' user-option';
-                        return `<div class="${className}">${letter}. ${option}</div>`;
+                        
+                        const userBadge = isUserAnswer ? '<span class="user-badge">您的选择</span>' : '';
+                        return `<div class="${className}">
+                            <span>${letter}. ${option}</span>
+                            ${userBadge}
+                        </div>`;
                     }).join('')}
                 </div>
             ` : '';

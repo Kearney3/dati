@@ -985,8 +985,16 @@ export const QuizScreen = ({
                   const deltaY = Math.abs(currentY - clickStartPos.y);
                   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                   
-                  // 如果移动距离超过20px，则认为是滑动，允许事件冒泡
-                  if (distance > 20) {
+                  // 任何垂直滑动都允许事件冒泡，不处理选择
+                  if (deltaY > 0) {
+                    setIsClickIntent(false);
+                    setIsProcessingTouch(false);
+                    // 不再阻止事件冒泡，允许滑动检测
+                    return;
+                  }
+                  
+                  // 如果移动距离超过30px，则认为是滑动，允许事件冒泡
+                  if (distance > 30) {
                     setIsClickIntent(false);
                     setIsProcessingTouch(false);
                     // 不再阻止事件冒泡，允许滑动检测
@@ -1006,8 +1014,15 @@ export const QuizScreen = ({
                   const deltaY = Math.abs(endY - clickStartPos.y);
                   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                   
-                  // 如果移动距离小于20px，则认为是点击
-                  if (distance < 20) {
+                  // 任何垂直滑动都不处理点击
+                  if (deltaY > 0) {
+                    setIsClickIntent(false);
+                    setIsProcessingTouch(false);
+                    return;
+                  }
+                  
+                  // 如果移动距离小于50px，则认为是点击
+                  if (distance < 50) {
                     e.stopPropagation();
                     e.preventDefault();
                     setIsClickIntent(true);
@@ -1079,6 +1094,29 @@ export const QuizScreen = ({
                         }
                       }}
                       onTouchEnd={(e) => {
+                        // 检查是否为垂直滑动
+                        if (clickStartPos) {
+                          const endX = e.changedTouches[0].clientX;
+                          const endY = e.changedTouches[0].clientY;
+                          const deltaX = Math.abs(endX - clickStartPos.x);
+                          const deltaY = Math.abs(endY - clickStartPos.y);
+                          
+                          // 任何垂直滑动都不处理选择
+                          if (deltaY > 0) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                          }
+                          
+                          // 如果移动距离过大（超过50px），也不处理选择
+                          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                          if (distance > 50) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                          }
+                        }
+                        
                         e.stopPropagation();
                         e.preventDefault();
                         
