@@ -456,7 +456,7 @@ export const exportToHTML = (data: ExportData) => {
                     <div class="correct-answer"><strong>正确答案:</strong> ${formattedCorrectAnswer}</div>
                 </div>
                 <div class="explanation-container hidden">
-                    ${question.explanation ? `<div class="explanation"><strong>解析:</strong> ${question.explanation}</div>` : '<div class="explanation">暂无解析</div>'}
+                    ${question.explanation ? `<div class="explanation"><strong>解析:</strong> ${question.explanation}</div>` : '<div class="explanation"></div>'}
                 </div>
             </div>
             `;
@@ -493,6 +493,13 @@ export const exportToHTML = (data: ExportData) => {
                 const correctAnswer = element.querySelector('.correct-answer').textContent.replace('正确答案: ', '');
                 const isCorrect = element.classList.contains('correct');
                 
+                // 提取解析
+                let explanation = '';
+                const explanationElement = element.querySelector('.explanation');
+                if (explanationElement) {
+                    explanation = explanationElement.textContent.replace('解析:', '').trim();
+                }
+                
                 // 提取选项
                 const options = [];
                 const optionElements = element.querySelectorAll('.option');
@@ -506,7 +513,8 @@ export const exportToHTML = (data: ExportData) => {
                     text: questionText,
                     type: questionType,
                     options: options,
-                    answer: correctAnswer
+                    answer: correctAnswer,
+                    explanation: explanation
                 });
                 
                 results.push({
@@ -514,7 +522,8 @@ export const exportToHTML = (data: ExportData) => {
                     isCorrect: isCorrect,
                     userAnswer: userAnswer,
                     correctAnswer: correctAnswer,
-                    questionType: questionType
+                    questionType: questionType,
+                    explanation: explanation
                 });
             });
             
@@ -523,7 +532,7 @@ export const exportToHTML = (data: ExportData) => {
             
             // 创建答题情况工作表
             const quizDetailsData = [
-                ['题号', '题目类型', '题目内容', '选项A', '选项B', '选项C', '选项D', '选项E', '选项F', '您的答案', '正确答案', '是否正确']
+                ['题号', '题目类型', '题目内容', '选项A', '选项B', '选项C', '选项D', '选项E', '选项F', '您的答案', '正确答案', '是否正确', '解析']
             ];
             
             questions.forEach((question, index) => {
@@ -540,7 +549,8 @@ export const exportToHTML = (data: ExportData) => {
                     question.options[5] || '',
                     result.userAnswer,
                     result.correctAnswer,
-                    result.isCorrect ? '正确' : '错误'
+                    result.isCorrect ? '正确' : '错误',
+                    result.explanation || ''
                 ];
                 quizDetailsData.push(row);
             });

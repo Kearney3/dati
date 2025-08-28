@@ -142,16 +142,85 @@ export const ResultsScreen = ({
               <XCircle className="w-4 h-4 text-danger-400 mr-2" />
             )}
             <span className="font-medium">
-              第 {hoveredQuestion + 1} 题
+              第 {hoveredQuestion + 1} 题 ({questions[hoveredQuestion].type})
             </span>
           </div>
-          <p className="text-sm mb-2">{questions[hoveredQuestion].text}</p>
-          <p className="text-xs text-gray-300">
-            您的答案: {formatJudgmentAnswer(results[hoveredQuestion].userAnswer, questions[hoveredQuestion], settings)}
-          </p>
-          <p className="text-xs text-gray-300">
-            正确答案: {formatCorrectAnswer(questions[hoveredQuestion], settings)}
-          </p>
+          <p className="text-sm mb-3">{questions[hoveredQuestion].text}</p>
+          
+          {/* 显示选项 */}
+          {questions[hoveredQuestion].type !== '填空题' && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-400 mb-2">选项:</p>
+              <div className="space-y-1">
+                {(() => {
+                  const question = questions[hoveredQuestion];
+                  const result = results[hoveredQuestion];
+                  
+                  // 获取选项内容
+                  let options: string[] = [];
+                  if (question.type === '判断题') {
+                    options = [settings.judgementTrue, settings.judgementFalse];
+                  } else {
+                    options = question.options || [];
+                  }
+                  
+                  return options.map((option, optIndex) => {
+                    const letter = String.fromCharCode(65 + optIndex);
+                    
+                    // 判断是否为正确答案
+                    let isCorrect = false;
+                    if (question.type === '判断题') {
+                      const correctAnswerFormatted = formatCorrectAnswer(question, settings);
+                      isCorrect = option === correctAnswerFormatted;
+                    } else if (question.type === '多选题') {
+                      // 多选题：检查答案字符串中是否包含该字母
+                      const normalizedAnswer = question.answer.replace(/[,，\s]/g, '').toUpperCase();
+                      isCorrect = normalizedAnswer.includes(letter);
+                    } else {
+                      // 单选题：直接比较答案
+                      isCorrect = question.answer.toUpperCase() === letter;
+                    }
+                    
+                    // 判断是否为用户选答案
+                    let isUserAnswer = false;
+                    if (question.type === '判断题') {
+                      const userAnswerFormatted = formatJudgmentAnswer(result.userAnswer, question, settings);
+                      isUserAnswer = option === userAnswerFormatted;
+                    } else {
+                      isUserAnswer = !!(result.userAnswer && result.userAnswer.includes(letter));
+                    }
+                    
+                    let className = 'text-xs p-1 rounded';
+                    if (isCorrect && isUserAnswer) {
+                      className += ' bg-green-600 text-white';
+                    } else if (isCorrect) {
+                      className += ' bg-green-600 text-white';
+                    } else if (isUserAnswer) {
+                      className += ' bg-red-600 text-white';
+                    } else {
+                      className += ' text-gray-300';
+                    }
+                    
+                    return (
+                      <div key={optIndex} className={`${className} flex justify-between items-center`}>
+                        <span>{letter}. {option}</span>
+                        {isUserAnswer && <span className="text-xs text-orange-400 border border-orange-400 bg-orange-50 px-1 rounded font-bold">您的选择</span>}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
+          
+          <div className="border-t border-gray-700 pt-2">
+            <p className="text-xs text-gray-300">
+              您的答案: {formatJudgmentAnswer(results[hoveredQuestion].userAnswer, questions[hoveredQuestion], settings)}
+            </p>
+            <p className="text-xs text-gray-300">
+              正确答案: {formatCorrectAnswer(questions[hoveredQuestion], settings)}
+            </p>
+          </div>
         </div>
       )}
 
