@@ -83,7 +83,7 @@ export const HeaderMapping = ({
         将Excel列名与题目属性进行对应
       </p>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {Object.entries(MAPPING_CONFIG).map(([key, config]) => (
           <div key={key} className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">

@@ -58,7 +58,7 @@ export const QuizScreen = ({
     const checkMobile = () => {
       const userAgent = navigator.userAgent.toLowerCase();
       const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) || 
-                            window.innerWidth <= 768;
+                            window.innerWidth <= 640;
       setIsMobile(isMobileDevice);
     };
     
@@ -1303,7 +1303,7 @@ export const QuizScreen = ({
                     onQuizStateChange({ ...quizState, currentQuestionIndex: index });
                     setShowNavPanel(false);
                   }}
-                  className={`p-2 sm:p-2.5 md:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  className={`p-2 sm:p-2.5 lg:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                     index === quizState.currentQuestionIndex
                       ? 'bg-primary-600 text-white'
                       : quizState.userAnswers[index]

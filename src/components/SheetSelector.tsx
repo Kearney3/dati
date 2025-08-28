@@ -83,7 +83,7 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
             为 {sheet.sheetName} 工作表配置独立的表头映射
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {Object.entries(MAPPING_CONFIG).map(([key, config]) => (
               <div key={key} className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -404,7 +404,7 @@ export const SheetSelector = ({
                   : 'border-gray-200 dark:border-gray-700'
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -427,13 +427,13 @@ export const SheetSelector = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-row items-center gap-2">
                   {sheet.isSelected && (
                     <>
                       {/* 使用全局映射按钮 */}
                       <button
                         onClick={() => handleSheetUseGlobalMapping(sheet.sheetName)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
                           sheet.useGlobalMapping
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
                             : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
@@ -442,13 +442,14 @@ export const SheetSelector = ({
                         title={multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping ? "全局映射已启用，无法单独控制" : "切换使用全局映射"}
                       >
                         <Globe className="w-4 h-4" />
-                        <span>使用全局映射</span>
+                        <span className="hidden sm:inline">使用全局映射</span>
+                        <span className="sm:hidden">全局映射</span>
                       </button>
                       
                       {/* 独立映射按钮 */}
                       <button
                         onClick={() => handleOpenMappingModal(sheet)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
                           !sheet.useGlobalMapping
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-700'
                             : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 border border-gray-200 dark:border-gray-600 cursor-not-allowed'
@@ -457,7 +458,8 @@ export const SheetSelector = ({
                         title={sheet.useGlobalMapping ? "请先取消使用全局映射" : "配置独立映射"}
                       >
                         <Settings className="w-4 h-4" />
-                        <span>独立映射配置</span>
+                        <span className="hidden sm:inline">独立映射配置</span>
+                        <span className="sm:hidden">独立映射</span>
                       </button>
                     </>
                   )}

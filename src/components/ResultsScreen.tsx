@@ -62,7 +62,7 @@ export const ResultsScreen = ({
 
       {/* Stats */}
       <div className="card p-8 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 text-center">
           <div>
             <div className="text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">
               {stats.correct}
@@ -135,7 +135,7 @@ export const ResultsScreen = ({
                   setTooltipPosition({ x: e.clientX, y: e.clientY });
                 }
               }}
-              className={`p-2 sm:p-2.5 md:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+              className={`p-2 sm:p-2.5 lg:p-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                 result.isCorrect
                   ? 'bg-success-600 text-white hover:bg-success-700'
                   : 'bg-danger-600 text-white hover:bg-danger-700'
