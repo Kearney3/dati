@@ -67,32 +67,121 @@ export const QuizScreen = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // 优化滑动阈值配置 - 增加阈值减少误触发
-  const SWIPE_HINT_THRESHOLD = 200; // 显示方向提示的最小水平位移（像素）
-  const SWIPE_TRIGGER_THRESHOLD = 200; // 触发换题的最小水平位移（像素）- 增加阈值
-  const SWIPE_MAX_VERTICAL_DELTA = 100; // 允许的最大垂直位移（像素）- 增加容错
-  const SWIPE_MIN_VELOCITY = 1; // 最小滑动速度（像素/毫秒）
+  // 滑动切题管理器
+  const useSwipeManager = () => {
+    // 滑动配置
+    const SWIPE_CONFIG = {
+      DRAG_THRESHOLD: 15, // 拖拽检测阈值（像素）
+      HINT_THRESHOLD: 50, // 显示提示的阈值（像素）
+      TRIGGER_THRESHOLD: 100, // 触发切题的阈值（像素）
+      MAX_VERTICAL_DELTA: 80, // 最大垂直位移（像素）
+      DEBOUNCE_TIME: 300, // 防抖时间（毫秒）
+    };
 
-  // 滑动状态
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
-  
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  const [touchEndY, setTouchEndY] = useState<number | null>(null);
-  const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
+    // 状态管理
+    const [swipeState, setSwipeState] = useState({
+      isActive: false,
+      direction: null as 'left' | 'right' | null,
+      startPos: null as { x: number; y: number } | null,
+      isDragging: false,
+      isProcessing: false,
+    });
 
-  // 防抖状态
-  const [isProcessingTouch, setIsProcessingTouch] = useState(false);
+    // 重置状态
+    const resetState = () => {
+      setSwipeState({
+        isActive: false,
+        direction: null,
+        startPos: null,
+        isDragging: false,
+        isProcessing: false,
+      });
+    };
+
+    // 开始滑动检测
+    const startSwipe = (x: number, y: number) => {
+      setSwipeState(prev => ({
+        ...prev,
+        isActive: true,
+        startPos: { x, y },
+        isDragging: false,
+        direction: null,
+      }));
+    };
+
+    // 更新滑动状态
+    const updateSwipe = (currentX: number, currentY: number) => {
+      setSwipeState(prev => {
+        if (!prev.isActive || !prev.startPos) return prev;
+
+        const deltaX = currentX - prev.startPos.x;
+        const deltaY = currentY - prev.startPos.y;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        // 检测是否为拖拽
+        let isDragging = prev.isDragging;
+        if (!prev.isDragging && distance > SWIPE_CONFIG.DRAG_THRESHOLD) {
+          isDragging = true;
+        }
+
+        // 只有在拖拽状态下才处理滑动
+        if (isDragging) {
+          // 检查垂直位移
+          if (Math.abs(deltaY) > SWIPE_CONFIG.MAX_VERTICAL_DELTA) {
+            return { ...prev, isDragging, direction: null };
+          }
+
+          // 确定滑动方向
+          let newDirection: 'left' | 'right' | null = null;
+          if (deltaX < -SWIPE_CONFIG.HINT_THRESHOLD) {
+            newDirection = 'left';
+          } else if (deltaX > SWIPE_CONFIG.HINT_THRESHOLD) {
+            newDirection = 'right';
+          }
+
+          return { ...prev, isDragging, direction: newDirection };
+        }
+
+        return { ...prev, isDragging };
+      });
+    };
+
+    // 结束滑动检测
+    const endSwipe = (endX: number, endY: number) => {
+      if (!swipeState.isActive || !swipeState.startPos) {
+        return null;
+      }
+
+      const deltaX = endX - swipeState.startPos.x;
+      const deltaY = endY - swipeState.startPos.y;
+
+      // 检查是否满足切题条件
+      const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+      const isEnoughDistance = Math.abs(deltaX) > SWIPE_CONFIG.TRIGGER_THRESHOLD;
+      const isDragging = swipeState.isDragging;
+
+      let result: 'left' | 'right' | null = null;
+      if (isHorizontalSwipe && isEnoughDistance && isDragging) {
+        result = deltaX < 0 ? 'left' : 'right';
+      }
+
+      // 无论是否满足切题条件，都返回结果，让外部决定是否重置状态
+      return result;
+    };
+
+    return {
+      swipeState,
+      startSwipe,
+      updateSwipe,
+      endSwipe,
+      resetState,
+    };
+  };
+
+  const swipeManager = useSwipeManager();
   
-  // 点击检测状态 - 用于区分点击和滑动
-  const [isClickIntent, setIsClickIntent] = useState(false);
-  const [clickStartTime, setClickStartTime] = useState<number | null>(null);
-  const [clickStartPos, setClickStartPos] = useState<{x: number, y: number} | null>(null);
-  
-  // 滑动确认状态 - 用于跟踪滑动是否已确认
-  const [swipeConfirmed, setSwipeConfirmed] = useState(false);
-  const [confirmedDirection, setConfirmedDirection] = useState<'left' | 'right' | null>(null);
+  // 防抖状态，防止连续快速滑动
+  const [isProcessingSwipe, setIsProcessingSwipe] = useState(false);
 
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
@@ -172,333 +261,180 @@ export const QuizScreen = ({
 
   // 优化的触摸滑动处理函数
   const handleTouchStart = (e: React.TouchEvent) => {
-    // 如果滑动被禁用，直接返回，不进行任何处理
-    if (!swipeEnabled) return;
+    // 如果滑动被禁用或正在处理滑动，直接返回
+    if (!swipeEnabled || isProcessingSwipe) return;
     
-    if (isProcessingTouch) return; // 防抖处理
+    // 检查是否在选项区域或输入框区域
+    const target = e.target as HTMLElement;
+    const isOptionArea = target.closest('label') || target.closest('.space-y-3') || target.closest('input');
+    const isInputArea = target.closest('input') || target.closest('.input');
+    
+    // 如果在选项区域或输入框区域，不处理滑动
+    if (isOptionArea || isInputArea) {
+      return;
+    }
     
     const startX = e.targetTouches[0].clientX;
     const startY = e.targetTouches[0].clientY;
-    const startTime = Date.now();
     
-    // 检查触摸目标是否为选项或输入框
-    const target = e.target as HTMLElement;
-    const isOptionClick = target.closest('label') || target.closest('input') || target.closest('.input');
-    const isClickableElement = !!(isOptionClick || target.closest('button') || target.closest('[role="button"]'));
-    
-    // 检查是否在选项区域
-    const isOptionArea = target.closest('label') || target.closest('.space-y-3');
-    
-    setTouchEnd(null);
-    setTouchStart(startX);
-    setTouchStartY(startY);
-    setTouchEndY(null);
-    setSwipeDirection(null);
-    setTouchStartTime(startTime);
-    
-    // 重置滑动确认状态
-    setSwipeConfirmed(false);
-    setConfirmedDirection(null);
-    
-    // 初始化点击检测 - 在选项区域时，根据移动距离判断
-    if (isOptionArea) {
-      // 选项区域的事件处理由选项容器负责
-      setIsClickIntent(false);
-    } else {
-      setIsClickIntent(isClickableElement);
-    }
-    setClickStartTime(startTime);
-    setClickStartPos({ x: startX, y: startY });
+    // 使用滑动管理器开始检测
+    swipeManager.startSwipe(startX, startY);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    // 如果滑动被禁用，直接返回，不进行任何处理
+    // 如果滑动被禁用，直接返回
     if (!swipeEnabled) return;
     
-    // 检查是否在填空题输入框区域
+    // 检查是否在选项区域或输入框区域
     const target = e.target as HTMLElement;
+    const isOptionArea = target.closest('label') || target.closest('.space-y-3') || target.closest('input');
+    const isInputArea = target.closest('input') || target.closest('.input');
     const isFillInputArea = currentQuestion.type === '填空题' && (
       target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
     );
     
-    // 在选项区域，只有在处理触摸时才阻止滑动
-    if (isFillInputFocused() || isProcessingTouch || isFillInputArea) {
-      setSwipeDirection(null);
+    // 如果在选项区域、输入框区域或填空题输入框聚焦，不处理滑动
+    if (isFillInputFocused() || isFillInputArea || isOptionArea || isInputArea) {
+      swipeManager.resetState();
       return;
     }
     
+    // 如果滑动状态未激活，直接返回
+    if (!swipeManager.swipeState.isActive) return;
+    
     const currentX = e.targetTouches[0].clientX;
     const currentY = e.targetTouches[0].clientY;
-    setTouchEnd(currentX);
-    setTouchEndY(currentY);
     
-    if (touchStart !== null && touchStartY !== null && clickStartPos !== null) {
-      const deltaX = currentX - touchStart;
-      const deltaY = currentY - touchStartY;
-      
-      // 检测是否为点击意图（移动距离很小）
-      const clickDeltaX = Math.abs(currentX - clickStartPos.x);
-      const clickDeltaY = Math.abs(currentY - clickStartPos.y);
-      const clickDistance = Math.sqrt(clickDeltaX * clickDeltaX + clickDeltaY * clickDeltaY);
-      
-      // 如果移动距离超过10px，则不是点击意图
-      if (clickDistance > 10) {
-        setIsClickIntent(false);
-      }
-
-      // 若垂直位移过大或垂直位移主导，则不显示左右滑动提示
-      if (Math.abs(deltaY) > SWIPE_MAX_VERTICAL_DELTA || Math.abs(deltaY) > Math.abs(deltaX)) {
-        setSwipeDirection(null);
-        return;
-      }
-      
-      // 检查滑动确认逻辑
-      if (swipeConfirmed && confirmedDirection) {
-        // 如果已经确认滑动，检查是否向反方向滑动取消
-        if ((confirmedDirection === 'left' && deltaX > 50) || 
-            (confirmedDirection === 'right' && deltaX < -50)) {
-          // 向反方向滑动超过50px，取消滑动
-          setSwipeConfirmed(false);
-          setConfirmedDirection(null);
-          setSwipeDirection(null);
-        } else {
-          // 保持确认的滑动方向
-          setSwipeDirection(confirmedDirection);
-        }
-      } else {
-        // 未确认滑动，检查是否达到确认条件
-        if (deltaX < -SWIPE_HINT_THRESHOLD) {
-          setSwipeDirection('left');
-          // 检查是否达到确认条件（距离和速度）
-          if (Math.abs(deltaX) > SWIPE_TRIGGER_THRESHOLD) {
-            const currentTime = Date.now();
-            const deltaTime = currentTime - (touchStartTime || currentTime);
-            const velocity = Math.abs(deltaX) / deltaTime;
-            if (velocity > SWIPE_MIN_VELOCITY) {
-              setSwipeConfirmed(true);
-              setConfirmedDirection('left');
-            }
-          }
-        } else if (deltaX > SWIPE_HINT_THRESHOLD) {
-          setSwipeDirection('right');
-          // 检查是否达到确认条件（距离和速度）
-          if (Math.abs(deltaX) > SWIPE_TRIGGER_THRESHOLD) {
-            const currentTime = Date.now();
-            const deltaTime = currentTime - (touchStartTime || currentTime);
-            const velocity = Math.abs(deltaX) / deltaTime;
-            if (velocity > SWIPE_MIN_VELOCITY) {
-              setSwipeConfirmed(true);
-              setConfirmedDirection('right');
-            }
-          }
-        } else {
-          setSwipeDirection(null);
-        }
-      }
-    }
+    // 使用滑动管理器更新状态
+    swipeManager.updateSwipe(currentX, currentY);
   };
 
-  const handleTouchEnd = () => {
-    // 如果滑动被禁用，直接返回，不进行任何处理
-    if (!swipeEnabled) return;
+  const handleTouchEnd = (e?: React.TouchEvent) => {
+    // 如果滑动被禁用或正在处理滑动，直接返回
+    if (!swipeEnabled || isProcessingSwipe) return;
     
-    // 检查是否在填空题输入框区域
+    // 检查是否在选项区域或输入框区域
     const target = document.activeElement as HTMLElement;
+    const isOptionArea = target && (target.closest('label') || target.closest('.space-y-3') || target.closest('input'));
+    const isInputArea = target && (target.closest('input') || target.closest('.input'));
     const isFillInputArea = currentQuestion.type === '填空题' && (
       target && (target.closest('input') || target.closest('.input') || target.tagName === 'INPUT')
     );
     
-    // 在选项区域，只有在处理触摸时才阻止滑动
-    if (isFillInputFocused() || isProcessingTouch || isFillInputArea) {
-      setSwipeDirection(null);
+    // 如果在选项区域、输入框区域或填空题输入框聚焦，不处理滑动
+    if (isFillInputFocused() || isFillInputArea || isOptionArea || isInputArea) {
+      swipeManager.resetState();
       return;
     }
     
-    if (touchStart === null || touchEnd === null || touchStartY === null || touchEndY === null || touchStartTime === null) return;
-    
-    const deltaX = touchEnd - touchStart;
-    const deltaY = touchEndY - touchStartY;
-    const deltaTime = Date.now() - touchStartTime;
-    const velocity = Math.abs(deltaX) / deltaTime;
-    
-    // 检查是否为点击意图
-    const isClick = isClickIntent && clickStartPos !== null && clickStartTime !== null;
-    const clickDuration = clickStartTime ? Date.now() - clickStartTime : 0;
-    
-    // 如果是点击意图（移动距离小且时间短），则不处理滑动
-    if (isClick && clickDuration < 300) {
-      setSwipeDirection(null);
-      setIsProcessingTouch(false);
-      setIsClickIntent(false);
-      setClickStartTime(null);
-      setClickStartPos(null);
-      return;
+    // 获取结束位置
+    let endX = 0, endY = 0;
+    if (e && e.changedTouches && e.changedTouches.length > 0) {
+      endX = e.changedTouches[0].clientX;
+      endY = e.changedTouches[0].clientY;
     }
     
-    setIsProcessingTouch(true); // 开始防抖处理
-
-    // 若垂直位移过大或垂直位移主导，则忽略此次滑动
-    if (Math.abs(deltaY) > SWIPE_MAX_VERTICAL_DELTA || Math.abs(deltaY) > Math.abs(deltaX)) {
-      setSwipeDirection(null);
-      setIsProcessingTouch(false);
-      return;
-    }
-
-    // 优先处理已确认的滑动
-    if (swipeConfirmed && confirmedDirection) {
-      if (confirmedDirection === 'left' && quizState.currentQuestionIndex < questions.length - 1) {
-        // 向左滑动，下一题
-        setSwipeDirection('left');
-        setTimeout(() => {
-          handleNext();
-          setSwipeDirection(null);
-          setIsProcessingTouch(false);
-          setSwipeConfirmed(false);
-          setConfirmedDirection(null);
-        }, 200);
-      } else if (confirmedDirection === 'right' && quizState.currentQuestionIndex > 0) {
-        // 向右滑动，上一题
-        setSwipeDirection('right');
-        setTimeout(() => {
-          handlePrev();
-          setSwipeDirection(null);
-          setIsProcessingTouch(false);
-          setSwipeConfirmed(false);
-          setConfirmedDirection(null);
-        }, 200);
-      } else {
-        setSwipeDirection(null);
-        setIsProcessingTouch(false);
-        setSwipeConfirmed(false);
-        setConfirmedDirection(null);
-      }
-    } else {
-      // 处理未确认的滑动（原有逻辑）
-      const isLeftSwipe = deltaX < -SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
-      const isRightSwipe = deltaX > SWIPE_TRIGGER_THRESHOLD && velocity > SWIPE_MIN_VELOCITY;
-
-      if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
-        // 向左滑动，下一题
-        setSwipeDirection('left');
-        setTimeout(() => {
-          handleNext();
-          setSwipeDirection(null);
-          setIsProcessingTouch(false);
-        }, 200);
-      } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
-        // 向右滑动，上一题
-        setSwipeDirection('right');
-        setTimeout(() => {
-          handlePrev();
-          setSwipeDirection(null);
-          setIsProcessingTouch(false);
-        }, 200);
-      } else {
-        setSwipeDirection(null);
-        setIsProcessingTouch(false);
-      }
-    }
+    // 使用滑动管理器结束检测并获取结果
+    const result = swipeManager.endSwipe(endX, endY);
     
-    // 重置点击检测状态
-    setIsClickIntent(false);
-    setClickStartTime(null);
-    setClickStartPos(null);
+    // 立即重置滑动状态，避免状态残留
+    swipeManager.resetState();
+    
+    // 处理滑动结果
+    if (result === 'left' && quizState.currentQuestionIndex < questions.length - 1) {
+      // 向左滑动，下一题
+      setIsProcessingSwipe(true);
+      setTimeout(() => {
+        handleNext();
+        setIsProcessingSwipe(false);
+      }, 150);
+    } else if (result === 'right' && quizState.currentQuestionIndex > 0) {
+      // 向右滑动，上一题
+      setIsProcessingSwipe(true);
+      setTimeout(() => {
+        handlePrev();
+        setIsProcessingSwipe(false);
+      }, 150);
+    }
   };
 
-  // 鼠标拖拽处理函数（用于电脑测试）
-  const [mouseStart, setMouseStart] = useState<number | null>(null);
-  const [mouseEnd, setMouseEnd] = useState<number | null>(null);
-  const [mouseStartY, setMouseStartY] = useState<number | null>(null);
-  const [mouseEndY, setMouseEndY] = useState<number | null>(null);
-
+  // 鼠标拖拽处理函数（使用滑动管理器）
   const handleMouseDown = (e: React.MouseEvent) => {
-    setMouseEnd(null);
-    setMouseStart(e.clientX);
-    setMouseStartY(e.clientY);
-    setMouseEndY(null);
-    setSwipeDirection(null);
+    // 如果正在处理滑动，直接返回
+    if (isProcessingSwipe) return;
+    
+    // 检查是否在选项区域
+    const target = e.target as HTMLElement;
+    const isOptionArea = target.closest('label') || target.closest('input') || target.closest('.space-y-3');
+    
+    if (isOptionArea) {
+      // 在选项区域，不处理鼠标滑动
+      return;
+    }
+    
+    // 使用滑动管理器开始检测
+    swipeManager.startSwipe(e.clientX, e.clientY);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isFillInputFocused()) {
-      setSwipeDirection(null);
+    // 检查是否在选项区域
+    const target = e.target as HTMLElement;
+    const isOptionArea = target.closest('label') || target.closest('input') || target.closest('.space-y-3');
+    
+    if (isFillInputFocused() || isOptionArea) {
+      swipeManager.resetState();
       return;
     }
-    if (mouseStart !== null && mouseStartY !== null) {
-      const currentX = e.clientX;
-      const currentY = e.clientY;
-      setMouseEnd(currentX);
-      setMouseEndY(currentY);
-      
-      const deltaX = currentX - mouseStart;
-      const deltaY = currentY - mouseStartY;
-
-      if (Math.abs(deltaY) > SWIPE_MAX_VERTICAL_DELTA || Math.abs(deltaY) > Math.abs(deltaX)) {
-        setSwipeDirection(null);
-        return;
-      }
-
-      if (deltaX < -SWIPE_HINT_THRESHOLD) {
-        setSwipeDirection('left');
-      } else if (deltaX > SWIPE_HINT_THRESHOLD) {
-        setSwipeDirection('right');
-      } else {
-        setSwipeDirection(null);
-      }
-    }
+    
+    // 如果滑动状态未激活，直接返回
+    if (!swipeManager.swipeState.isActive) return;
+    
+    // 使用滑动管理器更新状态
+    swipeManager.updateSwipe(e.clientX, e.clientY);
   };
 
-  const handleMouseUp = () => {
-    if (isFillInputFocused()) {
-      setSwipeDirection(null);
-      // 重置状态
-      setMouseStart(null);
-      setMouseEnd(null);
-      setMouseStartY(null);
-      setMouseEndY(null);
-      return;
-    }
-    if (mouseStart === null || mouseEnd === null || mouseStartY === null || mouseEndY === null) return;
+  const handleMouseUp = (e?: React.MouseEvent) => {
+    // 如果正在处理滑动，直接返回
+    if (isProcessingSwipe) return;
     
-    const deltaX = mouseEnd - mouseStart;
-    const deltaY = mouseEndY - mouseStartY;
-
-    if (Math.abs(deltaY) > SWIPE_MAX_VERTICAL_DELTA || Math.abs(deltaY) > Math.abs(deltaX)) {
-      setSwipeDirection(null);
-      // 重置状态
-      setMouseStart(null);
-      setMouseEnd(null);
-      setMouseStartY(null);
-      setMouseEndY(null);
+    // 检查是否在选项区域
+    const target = document.activeElement as HTMLElement;
+    const isOptionArea = target && (target.closest('label') || target.closest('input') || target.closest('.space-y-3'));
+    
+    if (isFillInputFocused() || isOptionArea) {
+      swipeManager.resetState();
       return;
     }
-
-    const isLeftSwipe = deltaX < -SWIPE_TRIGGER_THRESHOLD;
-    const isRightSwipe = deltaX > SWIPE_TRIGGER_THRESHOLD;
-
-    if (isLeftSwipe && quizState.currentQuestionIndex < questions.length - 1) {
+    
+    // 获取结束位置
+    let endX = 0, endY = 0;
+    if (e) {
+      endX = e.clientX;
+      endY = e.clientY;
+    }
+    
+    // 使用滑动管理器结束检测并获取结果
+    const result = swipeManager.endSwipe(endX, endY);
+    
+    // 立即重置滑动状态，避免状态残留
+    swipeManager.resetState();
+    
+    // 处理滑动结果
+    if (result === 'left' && quizState.currentQuestionIndex < questions.length - 1) {
       // 向左滑动，下一题
-      setSwipeDirection('left');
+      setIsProcessingSwipe(true);
       setTimeout(() => {
         handleNext();
-        setSwipeDirection(null);
+        setIsProcessingSwipe(false);
       }, 150);
-    } else if (isRightSwipe && quizState.currentQuestionIndex > 0) {
+    } else if (result === 'right' && quizState.currentQuestionIndex > 0) {
       // 向右滑动，上一题
-      setSwipeDirection('right');
+      setIsProcessingSwipe(true);
       setTimeout(() => {
         handlePrev();
-        setSwipeDirection(null);
+        setIsProcessingSwipe(false);
       }, 150);
-    } else {
-      setSwipeDirection(null);
     }
-    
-    // 重置状态
-    setMouseStart(null);
-    setMouseEnd(null);
-    setMouseStartY(null);
-    setMouseEndY(null);
   };
 
   // Show immediate feedback in recite mode
@@ -509,6 +445,12 @@ export const QuizScreen = ({
       setShowFeedback(true);
     }
   }, [currentQuestion, settings.mode]);
+
+  // 题目切换时重置滑动状态
+  useEffect(() => {
+    swipeManager.resetState();
+    setIsProcessingSwipe(false);
+  }, [quizState.currentQuestionIndex]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -918,10 +860,10 @@ export const QuizScreen = ({
         className="card p-6 mb-6 relative overflow-hidden touch-manipulation"
         onTouchStart={swipeEnabled ? handleTouchStart : undefined}
         onTouchMove={swipeEnabled ? handleTouchMove : undefined}
-        onTouchEnd={swipeEnabled ? handleTouchEnd : undefined}
+        onTouchEnd={swipeEnabled ? (e) => handleTouchEnd(e) : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
+        onMouseUp={(e) => handleMouseUp(e)}
         onMouseLeave={handleMouseUp}
         style={{ 
           userSelect: 'none',
@@ -930,14 +872,14 @@ export const QuizScreen = ({
         }}
       >
         {/* 滑动指示器 */}
-        {swipeDirection && (
+        {swipeManager.swipeState.direction && (
           <div className={`absolute inset-0 flex items-center justify-center z-50 pointer-events-none transition-all duration-200 ${
-            swipeDirection === 'left' ? 'bg-blue-500/20' : 'bg-green-500/20'
+            swipeManager.swipeState.direction === 'left' ? 'bg-blue-500/20' : 'bg-green-500/20'
           }`}>
             <div className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 dark:bg-gray-800/90 shadow-lg ${
-              swipeDirection === 'left' ? 'text-blue-600' : 'text-green-600'
+              swipeManager.swipeState.direction === 'left' ? 'text-blue-600' : 'text-green-600'
             }`}>
-              {swipeDirection === 'left' ? (
+              {swipeManager.swipeState.direction === 'left' ? (
                 <>
                   <ChevronRight className="w-5 h-5" />
                   <span className="font-medium">下一题</span>
@@ -966,78 +908,19 @@ export const QuizScreen = ({
             <div 
               className="space-y-3"
               onTouchStart={(e) => {
-                // 检查是否为点击意图（移动距离很小）
-                const startX = e.targetTouches[0].clientX;
-                const startY = e.targetTouches[0].clientY;
-                
-                // 记录起始位置用于后续判断
-                setClickStartPos({ x: startX, y: startY });
-                setClickStartTime(Date.now());
-                
-                // 暂时阻止事件冒泡，等待判断是否为点击
+                // 在选项区域，完全阻止事件冒泡到滑动处理
                 e.stopPropagation();
+                e.preventDefault();
               }}
               onTouchMove={(e) => {
-                if (clickStartPos) {
-                  const currentX = e.targetTouches[0].clientX;
-                  const currentY = e.targetTouches[0].clientY;
-                  const deltaX = Math.abs(currentX - clickStartPos.x);
-                  const deltaY = Math.abs(currentY - clickStartPos.y);
-                  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                  
-                  // 任何垂直滑动都允许事件冒泡，不处理选择
-                  if (deltaY > 0) {
-                    setIsClickIntent(false);
-                    setIsProcessingTouch(false);
-                    // 不再阻止事件冒泡，允许滑动检测
-                    return;
-                  }
-                  
-                  // 如果移动距离超过30px，则认为是滑动，允许事件冒泡
-                  if (distance > 30) {
-                    setIsClickIntent(false);
-                    setIsProcessingTouch(false);
-                    // 不再阻止事件冒泡，允许滑动检测
-                    return;
-                  }
-                }
-                
-                // 如果移动距离小，则阻止事件冒泡
+                // 在选项区域，完全阻止事件冒泡
                 e.stopPropagation();
                 e.preventDefault();
               }}
               onTouchEnd={(e) => {
-                if (clickStartPos) {
-                  const endX = e.changedTouches[0].clientX;
-                  const endY = e.changedTouches[0].clientY;
-                  const deltaX = Math.abs(endX - clickStartPos.x);
-                  const deltaY = Math.abs(endY - clickStartPos.y);
-                  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                  
-                  // 任何垂直滑动都不处理点击
-                  if (deltaY > 0) {
-                    setIsClickIntent(false);
-                    setIsProcessingTouch(false);
-                    return;
-                  }
-                  
-                  // 如果移动距离小于50px，则认为是点击
-                  if (distance < 50) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    setIsClickIntent(true);
-                    setIsProcessingTouch(true);
-                    
-                    // 延迟重置状态
-                    setTimeout(() => {
-                      setIsProcessingTouch(false);
-                    }, 50);
-                  } else {
-                    // 如果移动距离大，则认为是滑动，不阻止事件冒泡
-                    setIsClickIntent(false);
-                    setIsProcessingTouch(false);
-                  }
-                }
+                // 在选项区域，完全阻止事件冒泡
+                e.stopPropagation();
+                e.preventDefault();
               }}
             >
               {(currentQuestion.type === '判断题' 
@@ -1093,30 +976,18 @@ export const QuizScreen = ({
                           handleAnswerChange(letter);
                         }
                       }}
+                      onTouchStart={(e) => {
+                        // 完全阻止事件冒泡
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      onTouchMove={(e) => {
+                        // 完全阻止事件冒泡
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
                       onTouchEnd={(e) => {
-                        // 检查是否为垂直滑动
-                        if (clickStartPos) {
-                          const endX = e.changedTouches[0].clientX;
-                          const endY = e.changedTouches[0].clientY;
-                          const deltaX = Math.abs(endX - clickStartPos.x);
-                          const deltaY = Math.abs(endY - clickStartPos.y);
-                          
-                          // 任何垂直滑动都不处理选择
-                          if (deltaY > 0) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return;
-                          }
-                          
-                          // 如果移动距离过大（超过50px），也不处理选择
-                          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                          if (distance > 50) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return;
-                          }
-                        }
-                        
+                        // 完全阻止事件冒泡
                         e.stopPropagation();
                         e.preventDefault();
                         
@@ -1206,9 +1077,27 @@ export const QuizScreen = ({
                       answers[index] = e.target.value;
                       handleAnswerChange(answers.join('|||'));
                     }}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onTouchMove={(e) => e.stopPropagation()}
-                    onTouchEnd={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onTouchMove={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onTouchEnd={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onMouseMove={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onMouseUp={(e) => {
+                      e.stopPropagation();
+                    }}
                     className="input w-full text-base py-3 px-4 min-h-[48px] touch-manipulation"
                     disabled={settings.mode === 'recite'}
                     style={{
