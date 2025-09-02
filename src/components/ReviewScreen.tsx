@@ -474,11 +474,11 @@ export const ReviewScreen = ({
                         您的答案:
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {(userAnswer || '').split('|||').map((ans, i) => (
+                        {(userAnswer || '').split(settings.fillBlankSeparator || '|').map((ans, i) => (
                           <span
                             key={i}
                             className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                              ans.trim().toLowerCase() === question.answer.split('|||')[i]?.trim().toLowerCase()
+                              ans.trim().toLowerCase() === question.answer.split(settings.fillBlankSeparator || '|')[i]?.trim().toLowerCase()
                                 ? 'bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-200'
                                 : 'bg-danger-100 dark:bg-danger-900/30 text-danger-800 dark:text-danger-200'
                             }`}
@@ -493,7 +493,7 @@ export const ReviewScreen = ({
                         正确答案:
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {question.answer.split('|||').map((ans, i) => (
+                        {question.answer.split(settings.fillBlankSeparator || '|').map((ans, i) => (
                           <span
                             key={i}
                             className="px-3 py-1 rounded-lg text-sm font-medium bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-200"

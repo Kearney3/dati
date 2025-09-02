@@ -22,6 +22,8 @@ export interface QuizSettings {
   judgementFalse: string;
   questionRanges: QuestionRange[];
   useCustomRanges: boolean;
+  // 新增：填空题答案分隔符配置
+  fillBlankSeparator: string;
 }
 
 export interface ExamConfig {

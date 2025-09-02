@@ -182,6 +182,69 @@ export const QuizScreen = ({
   
   // 防抖状态，防止连续快速滑动
   const [isProcessingSwipe, setIsProcessingSwipe] = useState(false);
+  
+  // 触摸事件管理器 - 用于区分点击和滑动
+  const useTouchManager = () => {
+    const [touchState, setTouchState] = useState({
+      startPos: null as { x: number; y: number } | null,
+      isDragging: false,
+      startTime: 0,
+    });
+    
+    const TOUCH_CONFIG = {
+      MOVE_THRESHOLD: 10, // 移动阈值（像素）
+      TIME_THRESHOLD: 300, // 时间阈值（毫秒）
+    };
+    
+    const startTouch = (x: number, y: number) => {
+      setTouchState({
+        startPos: { x, y },
+        isDragging: false,
+        startTime: Date.now(),
+      });
+    };
+    
+    const updateTouch = (currentX: number, currentY: number) => {
+      setTouchState(prev => {
+        if (!prev.startPos) return prev;
+        
+        const deltaX = Math.abs(currentX - prev.startPos.x);
+        const deltaY = Math.abs(currentY - prev.startPos.y);
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        if (distance > TOUCH_CONFIG.MOVE_THRESHOLD) {
+          return { ...prev, isDragging: true };
+        }
+        
+        return prev;
+      });
+    };
+    
+    const endTouch = () => {
+      const result = {
+        isClick: !touchState.isDragging && 
+                 (Date.now() - touchState.startTime) < TOUCH_CONFIG.TIME_THRESHOLD,
+        isDragging: touchState.isDragging,
+      };
+      
+      setTouchState({
+        startPos: null,
+        isDragging: false,
+        startTime: 0,
+      });
+      
+      return result;
+    };
+    
+    return {
+      touchState,
+      startTouch,
+      updateTouch,
+      endTouch,
+    };
+  };
+  
+  const touchManager = useTouchManager();
 
   const currentQuestion = questions[quizState.currentQuestionIndex];
   const currentAnswer = quizState.userAnswers[quizState.currentQuestionIndex];
@@ -266,8 +329,8 @@ export const QuizScreen = ({
     
     // 检查是否在选项区域或输入框区域
     const target = e.target as HTMLElement;
-    const isOptionArea = target.closest('label') || target.closest('.space-y-3') || target.closest('input');
-    const isInputArea = target.closest('input') || target.closest('.input');
+    const isOptionArea = target.closest('label') || target.closest('.quiz-options-area') || target.closest('input') || target.closest('button');
+    const isInputArea = target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area');
     
     // 如果在选项区域或输入框区域，不处理滑动
     if (isOptionArea || isInputArea) {
@@ -287,10 +350,10 @@ export const QuizScreen = ({
     
     // 检查是否在选项区域或输入框区域
     const target = e.target as HTMLElement;
-    const isOptionArea = target.closest('label') || target.closest('.space-y-3') || target.closest('input');
-    const isInputArea = target.closest('input') || target.closest('.input');
+    const isOptionArea = target.closest('label') || target.closest('.quiz-options-area') || target.closest('input') || target.closest('button');
+    const isInputArea = target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area');
     const isFillInputArea = currentQuestion.type === '填空题' && (
-      target.closest('input') || target.closest('.input') || target.tagName === 'INPUT'
+      target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area') || target.tagName === 'INPUT'
     );
     
     // 如果在选项区域、输入框区域或填空题输入框聚焦，不处理滑动
@@ -315,10 +378,10 @@ export const QuizScreen = ({
     
     // 检查是否在选项区域或输入框区域
     const target = document.activeElement as HTMLElement;
-    const isOptionArea = target && (target.closest('label') || target.closest('.space-y-3') || target.closest('input'));
-    const isInputArea = target && (target.closest('input') || target.closest('.input'));
+    const isOptionArea = target && (target.closest('label') || target.closest('.quiz-options-area') || target.closest('input') || target.closest('button'));
+    const isInputArea = target && (target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area') || target.closest('button'));
     const isFillInputArea = currentQuestion.type === '填空题' && (
-      target && (target.closest('input') || target.closest('.input') || target.tagName === 'INPUT')
+      target && (target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area') || target.tagName === 'INPUT')
     );
     
     // 如果在选项区域、输入框区域或填空题输入框聚焦，不处理滑动
@@ -365,10 +428,11 @@ export const QuizScreen = ({
     
     // 检查是否在选项区域
     const target = e.target as HTMLElement;
-    const isOptionArea = target.closest('label') || target.closest('input') || target.closest('.space-y-3');
+    const isOptionArea = target.closest('label') || target.closest('input') || target.closest('.quiz-options-area') || target.closest('button');
+    const isInputArea = target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area');
     
-    if (isOptionArea) {
-      // 在选项区域，不处理鼠标滑动
+    if (isOptionArea || isInputArea) {
+      // 在选项区域或输入框区域，不处理鼠标滑动
       return;
     }
     
@@ -379,9 +443,10 @@ export const QuizScreen = ({
   const handleMouseMove = (e: React.MouseEvent) => {
     // 检查是否在选项区域
     const target = e.target as HTMLElement;
-    const isOptionArea = target.closest('label') || target.closest('input') || target.closest('.space-y-3');
+    const isOptionArea = target.closest('label') || target.closest('input') || target.closest('.quiz-options-area') || target.closest('button');
+    const isInputArea = target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area');
     
-    if (isFillInputFocused() || isOptionArea) {
+    if (isFillInputFocused() || isOptionArea || isInputArea) {
       swipeManager.resetState();
       return;
     }
@@ -399,9 +464,10 @@ export const QuizScreen = ({
     
     // 检查是否在选项区域
     const target = document.activeElement as HTMLElement;
-    const isOptionArea = target && (target.closest('label') || target.closest('input') || target.closest('.space-y-3'));
+    const isOptionArea = target && (target.closest('label') || target.closest('input') || target.closest('.quiz-options-area') || target.closest('button'));
+    const isInputArea = target && (target.closest('input') || target.closest('.input') || target.closest('.quiz-fill-area'));
     
-    if (isFillInputFocused() || isOptionArea) {
+    if (isFillInputFocused() || isOptionArea || isInputArea) {
       swipeManager.resetState();
       return;
     }
@@ -895,7 +961,7 @@ export const QuizScreen = ({
         )}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex-1">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex-1 quiz-question-text">
               {quizState.currentQuestionIndex + 1}. {currentQuestion.text}
             </h2>
             <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium flex-shrink-0">
@@ -906,21 +972,18 @@ export const QuizScreen = ({
                     {/* Options */}
           {currentQuestion.type !== '填空题' && (
             <div 
-              className="space-y-3"
+              className="space-y-3 quiz-options-area"
               onTouchStart={(e) => {
                 // 在选项区域，完全阻止事件冒泡到滑动处理
                 e.stopPropagation();
-                e.preventDefault();
               }}
               onTouchMove={(e) => {
                 // 在选项区域，完全阻止事件冒泡
                 e.stopPropagation();
-                e.preventDefault();
               }}
               onTouchEnd={(e) => {
                 // 在选项区域，完全阻止事件冒泡
                 e.stopPropagation();
-                e.preventDefault();
               }}
             >
               {(currentQuestion.type === '判断题' 
@@ -979,40 +1042,53 @@ export const QuizScreen = ({
                       onTouchStart={(e) => {
                         // 完全阻止事件冒泡
                         e.stopPropagation();
-                        e.preventDefault();
+                        // 开始触摸检测
+                        const touch = e.touches[0];
+                        if (touch) {
+                          touchManager.startTouch(touch.clientX, touch.clientY);
+                        }
                       }}
                       onTouchMove={(e) => {
                         // 完全阻止事件冒泡
                         e.stopPropagation();
-                        e.preventDefault();
+                        // 更新触摸状态
+                        const touch = e.touches[0];
+                        if (touch) {
+                          touchManager.updateTouch(touch.clientX, touch.clientY);
+                        }
                       }}
                       onTouchEnd={(e) => {
                         // 完全阻止事件冒泡
                         e.stopPropagation();
-                        e.preventDefault();
                         
                         if (settings.mode === 'recite') return;
                         
-                        // 处理选项选择
-                        if (currentQuestion.type === '多选题') {
-                          // 多选题：切换选项状态
-                          const currentAnswerStr = currentAnswer || '';
-                          const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
-                          
-                          if (currentAnswers.includes(letter)) {
-                            // 如果已选中，则移除
-                            const index = currentAnswers.indexOf(letter);
-                            currentAnswers.splice(index, 1);
+                        // 检查触摸结果
+                        const touchResult = touchManager.endTouch();
+                        
+                        // 只有真正的点击才处理选项选择
+                        if (touchResult.isClick) {
+                          // 处理选项选择
+                          if (currentQuestion.type === '多选题') {
+                            // 多选题：切换选项状态
+                            const currentAnswerStr = currentAnswer || '';
+                            const currentAnswers = currentAnswerStr.split('').filter(char => char.match(/[A-Z]/));
+                            
+                            if (currentAnswers.includes(letter)) {
+                              // 如果已选中，则移除
+                              const index = currentAnswers.indexOf(letter);
+                              currentAnswers.splice(index, 1);
+                            } else {
+                              // 如果未选中，则添加
+                              currentAnswers.push(letter);
+                            }
+                            
+                            const newAnswer = currentAnswers.sort().join('');
+                            handleAnswerChange(newAnswer || null);
                           } else {
-                            // 如果未选中，则添加
-                            currentAnswers.push(letter);
+                            // 单选题和判断题：直接设置答案
+                            handleAnswerChange(letter);
                           }
-                          
-                          const newAnswer = currentAnswers.sort().join('');
-                          handleAnswerChange(newAnswer || null);
-                        } else {
-                          // 单选题和判断题：直接设置答案
-                          handleAnswerChange(letter);
                         }
                       }}
                     >
@@ -1065,45 +1141,53 @@ export const QuizScreen = ({
 
           {/* Fill-in question */}
           {currentQuestion.type === '填空题' && (
-            <div className="space-y-3">
-              {currentQuestion.answer.split('|||').map((_, index) => (
+            <div className="space-y-3 quiz-fill-area">
+              {currentQuestion.answer.split(settings.fillBlankSeparator || '|').map((_, index) => (
                 <div key={index} className="relative">
                   <input
                     type="text"
                     placeholder={`请填写第 ${index + 1} 个答案`}
-                    value={currentAnswer ? currentAnswer.split('|||')[index] || '' : ''}
+                    value={currentAnswer ? currentAnswer.split(settings.fillBlankSeparator || '|')[index] || '' : ''}
                     onChange={(e) => {
-                      const answers = currentAnswer ? currentAnswer.split('|||') : [];
+                      const separator = settings.fillBlankSeparator || '|';
+                      const answers = currentAnswer ? currentAnswer.split(separator) : [];
                       answers[index] = e.target.value;
-                      handleAnswerChange(answers.join('|||'));
+                      handleAnswerChange(answers.join(separator));
                     }}
                     onTouchStart={(e) => {
+                      // 只阻止事件冒泡，不阻止默认行为
                       e.stopPropagation();
-                      e.preventDefault();
                     }}
                     onTouchMove={(e) => {
+                      // 只阻止事件冒泡，不阻止默认行为
                       e.stopPropagation();
-                      e.preventDefault();
                     }}
                     onTouchEnd={(e) => {
+                      // 只阻止事件冒泡，不阻止默认行为
                       e.stopPropagation();
-                      e.preventDefault();
                     }}
                     onMouseDown={(e) => {
+                      // 只阻止事件冒泡，不阻止默认行为
                       e.stopPropagation();
                     }}
                     onMouseMove={(e) => {
+                      // 只阻止事件冒泡，不阻止默认行为
                       e.stopPropagation();
                     }}
                     onMouseUp={(e) => {
+                      // 只阻止事件冒泡，不阻止默认行为
                       e.stopPropagation();
                     }}
-                    className="input w-full text-base py-3 px-4 min-h-[48px] touch-manipulation"
+                    className="input w-full text-base py-3 px-4 min-h-[48px] touch-manipulation focus:ring-2 focus:ring-primary-500 focus:border-primary-500 active:scale-[0.98] transition-all duration-150"
                     disabled={settings.mode === 'recite'}
                     style={{
                       fontSize: '16px', // 防止iOS缩放
                       WebkitAppearance: 'none',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
+                      touchAction: 'manipulation', // 优化触摸操作
+                      WebkitTouchCallout: 'none', // 禁用iOS长按菜单
+                      WebkitUserSelect: 'text', // 允许文本选择
+                      userSelect: 'text' // 允许文本选择
                     }}
                   />
                 </div>

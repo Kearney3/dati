@@ -478,6 +478,83 @@ export const QuizSettings = ({
               </div>
             </div>
           )}
+
+          {/* 填空题答案分隔符配置 - 只在有填空题时显示 */}
+          {questionTypes.includes('填空题') && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  填空题答案分隔符配置
+                </label>
+                <div className="relative group">
+                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-help hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">?</span>
+                  </div>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                    <div className="relative">
+                      <div className="mb-2">
+                        <strong>分隔符说明：</strong>
+                      </div>
+                      <div className="text-xs space-y-1">
+                        <div>• 用于分隔填空题的多个答案</div>
+                        <div>• 如：答案1|答案2|答案3</div>
+                        <div>• 建议选择不常用的字符组合</div>
+                      </div>
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {/* 预设分隔符选项 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    预设分隔符
+                  </label>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                    {[
+                      { value: '|', label: '竖线分隔', desc: '| (推荐)' },
+                      { value: '/', label: '斜线分隔', desc: '/' },
+                      { value: '#', label: '井号分隔', desc: '#' },
+                      { value: '、', label: '顿号分隔', desc: '、' }
+                    ].map((separator) => (
+                      <button
+                        key={separator.value}
+                        type="button"
+                        onClick={() => handleChange('fillBlankSeparator', separator.value)}
+                        className={`p-3 text-left rounded-lg border transition-all duration-200 ${
+                          settings.fillBlankSeparator === separator.value
+                            ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600'
+                        }`}
+                      >
+                        <div className="font-medium text-sm">{separator.label}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{separator.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* 自定义分隔符 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    自定义分隔符
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.fillBlankSeparator}
+                    onChange={(e) => handleChange('fillBlankSeparator', e.target.value)}
+                    className="input font-mono"
+                    placeholder="输入自定义分隔符，如: |"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    当前分隔符: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">{settings.fillBlankSeparator || '|||'}</code>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

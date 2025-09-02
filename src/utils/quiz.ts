@@ -91,13 +91,14 @@ export const checkAnswer = (
     }
     
     case '填空题': {
-      const userAnswersTrimmed = (userAnswer || '').split('|||').map(a => a.trim().toLowerCase());
-      const correctAnswersTrimmed = question.answer.split('|||').map(a => a.trim().toLowerCase());
+      const separator = settings.fillBlankSeparator || '|';
+      const userAnswersTrimmed = (userAnswer || '').split(separator).map(a => a.trim().toLowerCase());
+      const correctAnswersTrimmed = question.answer.split(separator).map(a => a.trim().toLowerCase());
       
       isCorrect = userAnswersTrimmed.length === correctAnswersTrimmed.length &&
                   userAnswersTrimmed.every((val, idx) => val === correctAnswersTrimmed[idx]);
       
-      correctAnswerText = question.answer.split('|||').join(', ');
+      correctAnswerText = question.answer.split(separator).join(', ');
       userAnswerText = userAnswer || '';
       break;
     }

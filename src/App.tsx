@@ -43,7 +43,8 @@ export default function App() {
     judgementTrue: '正确',
     judgementFalse: '错误',
     questionRanges: [],
-    useCustomRanges: false
+    useCustomRanges: false,
+    fillBlankSeparator: '|'
   });
   const [quizState, setQuizState] = useState({
     currentQuestionIndex: 0,
