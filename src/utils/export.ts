@@ -231,7 +231,15 @@ export const exportToHTML = (data: ExportData) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>答题结果报告</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            padding-bottom: 100px; /* 为悬浮分页控制留出空间 */
+        }
+        
+        body.no-pagination { 
+            padding-bottom: 20px; /* 当没有分页时减少底部空间 */
+        }
         .header { text-align: center; margin-bottom: 30px; }
         .header .export-buttons { margin-top: 15px; }
         .export-btn {
@@ -271,6 +279,122 @@ export const exportToHTML = (data: ExportData) => {
         .filter-group label { font-weight: bold; margin-right: 5px; }
         .filter-group select, .filter-group input { padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
         .filter-group input[type="checkbox"] { margin: 0; }
+        
+        .pagination-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(222, 226, 230, 0.8);
+            z-index: 1000;
+            min-width: auto;
+            max-width: 90vw;
+        }
+        
+        /* 深色主题支持 */
+        @media (prefers-color-scheme: dark) {
+            .pagination-controls {
+                background: rgba(31, 41, 55, 0.95);
+                border: 1px solid rgba(75, 85, 99, 0.8);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            }
+        }
+        
+        .pagination-info {
+            display: none;
+        }
+        
+        .pagination-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .pagination-btn {
+            padding: 8px 12px;
+            border: none;
+            background: #e5e7eb;
+            color: #374151;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 36px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .pagination-btn:hover:not(.hidden) {
+            background: #d1d5db;
+        }
+        
+        .pagination-btn.hidden {
+            display: none;
+        }
+        
+        .page-numbers {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .page-number {
+            padding: 8px 12px;
+            border: none;
+            background: #e5e7eb;
+            color: #374151;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 40px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .page-number:hover {
+            background: #d1d5db;
+        }
+        
+        .page-number.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        /* 深色主题下的页码按钮样式 */
+        @media (prefers-color-scheme: dark) {
+            .page-number {
+                background: #4b5563;
+                color: #d1d5db;
+            }
+            
+            .page-number:hover {
+                background: #6b7280;
+            }
+            
+            .page-number.active {
+                background: #3b82f6;
+                color: white;
+            }
+            
+            .pagination-btn {
+                background: #4b5563;
+                color: #d1d5db;
+            }
+            
+            .pagination-btn:hover:not(.hidden) {
+                background: #6b7280;
+            }
+        }
         
         .question { margin-bottom: 20px; padding: 15px; border: 1px solid #dee2e6; border-radius: 8px; }
         .correct { border-left: 4px solid #28a745; background: #d4edda; }
@@ -317,6 +441,53 @@ export const exportToHTML = (data: ExportData) => {
         .hidden { display: none; }
         
         .no-results { text-align: center; padding: 40px; color: #6c757d; font-style: italic; }
+        
+        /* 滚动跳转按钮样式 */
+        .scroll-buttons {
+            position: fixed;
+            right: 20px;
+            bottom: 120px;
+            z-index: 1000;
+        }
+        
+        .scroll-button {
+            width: 40px;
+            height: 40px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .scroll-button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .scroll-button.hidden {
+            display: none;
+        }
+        
+        /* 深色主题支持 */
+        @media (prefers-color-scheme: dark) {
+            .scroll-button {
+                background: #3b82f6;
+                color: white;
+            }
+            
+            .scroll-button:hover {
+                background: #2563eb;
+            }
+        }
     </style>
 </head>
 <body>
@@ -377,12 +548,39 @@ export const exportToHTML = (data: ExportData) => {
         </div>
         
         <div class="filter-group">
+            <label>每页显示:</label>
+            <select id="pageSize">
+                <option value="10">10题</option>
+                <option value="20">20题</option>
+                <option value="50">50题</option>
+                <option value="100">100题</option>
+                <option value="all">全部</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
             <label><input type="checkbox" id="showOptions"> 显示所有选项</label>
         </div>
         
         <div class="filter-group">
             <label><input type="checkbox" id="showExplanation"> 显示解析</label>
         </div>
+    </div>
+
+    <div class="pagination-controls">
+        <div class="pagination-buttons">
+            <button id="firstPage" class="pagination-btn" onclick="goToPage(1)" title="首页">&lt;&lt</button>
+            <button id="prevPage" class="pagination-btn" onclick="goToPage(currentPage - 1)" title="上一页">&lt;</button>
+            <div class="page-numbers" id="pageNumbers"></div>
+            <button id="nextPage" class="pagination-btn" onclick="goToPage(currentPage + 1)" title="下一页">&gt;</button>
+            <button id="lastPage" class="pagination-btn" onclick="goToPage(totalPages)" title="尾页">&gt;&gt</button>
+        </div>
+    </div>
+    
+    <!-- 滚动跳转按钮 -->
+    <div class="scroll-buttons">
+        <button id="scrollTopBtn" class="scroll-button hidden" onclick="scrollToTop()" title="回到顶部">↑</button>
+        <button id="scrollBottomBtn" class="scroll-button hidden" onclick="scrollToBottom()" title="跳转到底部">↓</button>
     </div>
 
     <h2>详细答题记录</h2>
@@ -469,6 +667,16 @@ export const exportToHTML = (data: ExportData) => {
 
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <script>
+        // 分页相关变量
+        let currentPage = 1;
+        let totalPages = 1;
+        let pageSize = 10;
+        let filteredQuestions = [];
+        
+        // 滚动按钮相关变量
+        let showScrollTop = false;
+        let showScrollBottom = false;
+        
         // 导出Excel功能
         function exportToExcel() {
             // 获取页面数据
@@ -623,11 +831,15 @@ export const exportToHTML = (data: ExportData) => {
         function filterQuestions() {
             const correctnessFilter = document.getElementById('correctnessFilter').value;
             const typeFilter = document.getElementById('typeFilter').value;
+            const pageSizeValue = document.getElementById('pageSize').value;
             const showOptions = document.getElementById('showOptions').checked;
             const showExplanation = document.getElementById('showExplanation').checked;
             
+            // 更新分页设置
+            pageSize = pageSizeValue === 'all' ? Infinity : parseInt(pageSizeValue);
+            
             const questions = document.querySelectorAll('.question');
-            let visibleCount = 0;
+            filteredQuestions = [];
             
             questions.forEach(question => {
                 const correctness = question.getAttribute('data-correctness');
@@ -646,10 +858,7 @@ export const exportToHTML = (data: ExportData) => {
                 }
                 
                 if (shouldShow) {
-                    question.classList.remove('hidden');
-                    visibleCount++;
-                } else {
-                    question.classList.add('hidden');
+                    filteredQuestions.push(question);
                 }
                 
                 // 选项显示控制
@@ -669,23 +878,192 @@ export const exportToHTML = (data: ExportData) => {
                 }
             });
             
+            // 重置到第一页
+            currentPage = 1;
+            
+            // 计算总页数
+            totalPages = pageSize === Infinity ? 1 : Math.ceil(filteredQuestions.length / pageSize);
+            
+            // 更新分页显示
+            updatePagination();
+            
+            // 显示当前页的题目
+            showCurrentPage();
+        }
+        
+        // 更新分页显示
+        function updatePagination() {
+            // 更新分页按钮状态
+            updatePaginationButtons();
+        }
+        
+        // 更新分页按钮状态
+        function updatePaginationButtons() {
+            const pageNumbers = document.getElementById('pageNumbers');
+            const firstPageBtn = document.getElementById('firstPage');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const lastPageBtn = document.getElementById('lastPage');
+            const paginationControls = document.querySelector('.pagination-controls');
+            
+            // 生成页码按钮
+            pageNumbers.innerHTML = '';
+            
+            if (pageSize === Infinity) {
+                // 如果显示全部，隐藏整个页面选择器
+                paginationControls.classList.add('hidden');
+                document.body.classList.add('no-pagination');
+                return;
+            } else {
+                // 显示页面选择器
+                paginationControls.classList.remove('hidden');
+                document.body.classList.remove('no-pagination');
+            }
+            
+            // 显示所有分页按钮
+            firstPageBtn.classList.remove('hidden');
+            prevPageBtn.classList.remove('hidden');
+            nextPageBtn.classList.remove('hidden');
+            lastPageBtn.classList.remove('hidden');
+            
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            // 调整起始页，确保显示足够的页码
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = 'page-number ' + (i === currentPage ? 'active' : '');
+                pageBtn.textContent = i;
+                pageBtn.onclick = function() { goToPage(i); };
+                pageNumbers.appendChild(pageBtn);
+            }
+            
+            // 更新首页/上一页按钮状态
+            if (currentPage === 1) {
+                firstPageBtn.classList.add('hidden');
+                prevPageBtn.classList.add('hidden');
+            } else {
+                firstPageBtn.classList.remove('hidden');
+                prevPageBtn.classList.remove('hidden');
+            }
+            
+            // 更新下一页/尾页按钮状态
+            if (currentPage === totalPages) {
+                nextPageBtn.classList.add('hidden');
+                lastPageBtn.classList.add('hidden');
+            } else {
+                nextPageBtn.classList.remove('hidden');
+                lastPageBtn.classList.remove('hidden');
+            }
+        }
+        
+        // 显示当前页的题目
+        function showCurrentPage() {
+            const questions = document.querySelectorAll('.question');
+            
+            // 先隐藏所有题目
+            questions.forEach(question => {
+                question.classList.add('hidden');
+            });
+            
+            // 显示当前页的题目
+            if (pageSize === Infinity) {
+                // 显示所有筛选后的题目
+                filteredQuestions.forEach(question => {
+                    question.classList.remove('hidden');
+                });
+            } else {
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, filteredQuestions.length);
+                
+                for (let i = startIndex; i < endIndex; i++) {
+                    if (filteredQuestions[i]) {
+                        filteredQuestions[i].classList.remove('hidden');
+                    }
+                }
+            }
+            
             // 显示/隐藏无结果提示
             const noResults = document.getElementById('noResults');
-            if (visibleCount === 0) {
+            if (filteredQuestions.length === 0) {
                 noResults.classList.remove('hidden');
             } else {
                 noResults.classList.add('hidden');
             }
         }
         
+        // 跳转到指定页面
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            showCurrentPage();
+            updatePagination();
+        }
+        
+        // 滚动到顶部
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // 滚动到底部
+        function scrollToBottom() {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        }
+        
+        // 更新滚动按钮显示状态
+        function updateScrollButtons() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+            
+            // 显示/隐藏回到顶部按钮
+            if (scrollTop > 300) {
+                scrollTopBtn.classList.remove('hidden');
+                showScrollTop = true;
+            } else {
+                scrollTopBtn.classList.add('hidden');
+                showScrollTop = false;
+            }
+            
+            // 显示/隐藏跳转到底部按钮
+            if (scrollTop + windowHeight < documentHeight - 100) {
+                scrollBottomBtn.classList.remove('hidden');
+                showScrollBottom = true;
+            } else {
+                scrollBottomBtn.classList.add('hidden');
+                showScrollBottom = false;
+            }
+        }
+        
         // 绑定事件监听器
         document.getElementById('correctnessFilter').addEventListener('change', filterQuestions);
         document.getElementById('typeFilter').addEventListener('change', filterQuestions);
+        document.getElementById('pageSize').addEventListener('change', filterQuestions); // 添加页面大小筛选器
         document.getElementById('showOptions').addEventListener('change', filterQuestions);
         document.getElementById('showExplanation').addEventListener('change', filterQuestions);
         
         // 初始化筛选
         filterQuestions();
+        
+        // 初始化时检查页面大小，确保页面选择器状态正确
+        if (pageSize === Infinity) {
+            document.body.classList.add('no-pagination');
+        }
+        
+        // 绑定滚动事件监听器
+        window.addEventListener('scroll', updateScrollButtons, { passive: true });
+        
+        // 初始化滚动按钮状态
+        updateScrollButtons();
     </script>
 </body>
 </html>`;
