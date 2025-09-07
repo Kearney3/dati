@@ -252,6 +252,14 @@ export const exportToHTML = (data: ExportData) => {
             transition: all 0.2s ease;
             margin: 0 5px;
         }
+        .theme-toggle {
+            background: #111827;
+            color: #f9fafb;
+        }
+        .theme-toggle:hover {
+            background: #0b1220;
+            transform: translateY(-1px);
+        }
         .excel-btn {
             background: #217346;
             color: white;
@@ -442,6 +450,36 @@ export const exportToHTML = (data: ExportData) => {
         
         .no-results { text-align: center; padding: 40px; color: #6c757d; font-style: italic; }
         
+        /* 主题：深色模式覆盖 */
+        body.theme-dark { background: #111827; color: #e5e7eb; }
+        body.theme-dark .stat-card { background: #1f2937; color: #e5e7eb; }
+        body.theme-dark .stats .stat-value { color: #60a5fa; }
+        body.theme-dark .filters { background: #1f2937; border-color: #374151; }
+        body.theme-dark .filter-group select, body.theme-dark .filter-group input { background: #111827; color: #e5e7eb; border-color: #374151; }
+        body.theme-dark .question { background: #111827; border-color: #374151; }
+        body.theme-dark .question-type { background: #374151; color: #e5e7eb; }
+        body.theme-dark .options { background: #1f2937; }
+        body.theme-dark .option { border-color: #4b5563; color: #e5e7eb; }
+        body.theme-dark .answer { background: #1f2937; }
+        body.theme-dark .explanation { color: #9ca3af; }
+        body.theme-dark .pagination-controls { background: rgba(31, 41, 55, 0.95); border: 1px solid rgba(75, 85, 99, 0.8); }
+        body.theme-dark .page-number { background: #4b5563; color: #d1d5db; }
+        body.theme-dark .page-number:hover { background: #6b7280; }
+        body.theme-dark .page-number.active { background: #3b82f6; color: #fff; }
+        body.theme-dark .pagination-btn { background: #4b5563; color: #d1d5db; }
+        body.theme-dark .pagination-btn:hover:not(.hidden) { background: #6b7280; }
+        body.theme-dark .scroll-button { background: #3b82f6; color: white; }
+        body.theme-dark .scroll-button:hover { background: #2563eb; }
+        /* 深色模式下：题块与选项的正确/错误配色 */
+        body.theme-dark .question.correct { background: rgba(16, 185, 129, 0.1); border-left-color: #10b981; }
+        body.theme-dark .question.incorrect { background: rgba(239, 68, 68, 0.12); border-left-color: #ef4444; }
+        body.theme-dark .option.correct-option { background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #d1fae5; }
+        body.theme-dark .option.user-option { background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fde68a; }
+        body.theme-dark .option.correct-option.user-option { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #a7f3d0; }
+        body.theme-dark .option .user-badge { background: #f59e0b; color: #111827; }
+        body.theme-dark .user-answer { color: #f87171; }
+        body.theme-dark .correct-answer { color: #34d399; }
+        
         /* 滚动跳转按钮样式 */
         .scroll-buttons {
             position: fixed;
@@ -498,6 +536,7 @@ export const exportToHTML = (data: ExportData) => {
             <button onclick="exportToExcel()" class="export-btn excel-btn">
                 📊 导出到Excel
             </button>
+            <button id="themeToggle" onclick="toggleTheme()" class="export-btn theme-toggle" title="切换主题">🌙 深色</button>
         </div>
     </div>
 
@@ -676,6 +715,24 @@ export const exportToHTML = (data: ExportData) => {
         // 滚动按钮相关变量
         let showScrollTop = false;
         let showScrollBottom = false;
+
+        // 主题
+        function applyTheme(theme) {
+            const toggleBtn = document.getElementById('themeToggle');
+            if (theme === 'dark') {
+                document.body.classList.add('theme-dark');
+                localStorage.setItem('reportTheme', 'dark');
+                if (toggleBtn) toggleBtn.textContent = '☀️ 浅色';
+            } else {
+                document.body.classList.remove('theme-dark');
+                localStorage.setItem('reportTheme', 'light');
+                if (toggleBtn) toggleBtn.textContent = '🌙 深色';
+            }
+        }
+        function toggleTheme() {
+            const isDark = document.body.classList.contains('theme-dark');
+            applyTheme(isDark ? 'light' : 'dark');
+        }
         
         // 导出Excel功能
         function exportToExcel() {
@@ -1064,6 +1121,22 @@ export const exportToHTML = (data: ExportData) => {
         
         // 初始化滚动按钮状态
         updateScrollButtons();
+
+        // 初始化主题
+        (function initTheme(){
+            try {
+                const saved = localStorage.getItem('reportTheme');
+                if (saved === 'dark' || saved === 'light') {
+                    applyTheme(saved);
+                } else {
+                    // 默认遵循系统主题
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    applyTheme(prefersDark ? 'dark' : 'light');
+                }
+            } catch (e) {
+                applyTheme('light');
+            }
+        })();
     </script>
 </body>
 </html>`;
