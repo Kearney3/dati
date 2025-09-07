@@ -3,6 +3,7 @@ import { Trophy, RefreshCw, ArrowLeft, Eye, CheckCircle, XCircle, Download, Home
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { getQuizStats, getExamStats, formatJudgmentAnswer, formatCorrectAnswer } from '../utils/quiz';
 import { exportToExcel, exportToHTML } from '../utils/export';
+import { useTranslation } from 'react-i18next';
 
 interface ResultsScreenProps {
   questions: Question[];
@@ -35,6 +36,7 @@ export const ResultsScreen = ({
   const stats = settings.mode === 'exam' && examSettings 
     ? getExamStats(results, examSettings)
     : getQuizStats(results);
+  const { t } = useTranslation();
   
   // 计算错题数量
   const wrongQuestionsCount = results.filter(result => !result.isCorrect).length;
@@ -52,10 +54,10 @@ export const ResultsScreen = ({
             <Trophy className="w-12 h-12 text-primary-600 dark:text-primary-400" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            答题完成
+            {t('results.title')}
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
-            恭喜您完成了本次答题
+            {t('results.subtitle')}
           </p>
         </div>
       </div>
@@ -67,26 +69,26 @@ export const ResultsScreen = ({
             <div className="text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">
               {stats.correct}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">答对题目</div>
+            <div className="text-gray-600 dark:text-gray-400">{t('results.correct_count')}</div>
           </div>
           <div>
             <div className="text-4xl font-bold text-danger-600 dark:text-danger-400 mb-2">
               {wrongQuestionsCount}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">错题数量</div>
+            <div className="text-gray-600 dark:text-gray-400">{t('results.wrong_count')}</div>
           </div>
           <div>
             <div className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
               {stats.total}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">总题目数</div>
+            <div className="text-gray-600 dark:text-gray-400">{t('results.total_count')}</div>
           </div>
           <div>
             <div className="text-4xl font-bold text-success-600 dark:text-success-400 mb-2">
               {settings.mode === 'exam' ? `${Number(stats.totalScore).toFixed(1)}/${Number(stats.maxScore).toFixed(1)}` : `${stats.accuracy}%`}
             </div>
             <div className="text-gray-600 dark:text-gray-400">
-              {settings.mode === 'exam' ? '得分/满分' : '正确率'}
+              {settings.mode === 'exam' ? t('results.score_ratio') : t('results.accuracy')}
             </div>
           </div>
         </div>
@@ -96,7 +98,7 @@ export const ResultsScreen = ({
       <div className="card p-6 mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center sm:text-left">
-            答题卡 (悬浮查看详情)
+            {t('results.answer_sheet_title')}
           </h3>
           <div className="flex items-center justify-center sm:justify-end gap-2">
             <button
@@ -106,15 +108,15 @@ export const ResultsScreen = ({
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
-              title={showExplanation ? '隐藏解析' : '显示解析'}
+              title={showExplanation ? t('results.hide_explanation') : t('results.show_explanation')}
             >
               {showExplanation ? (
                 <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" />
               ) : (
                 <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
               )}
-                              <span className="hidden sm:inline">{showExplanation ? '隐藏解析' : '显示解析'}</span>
-                <span className="sm:hidden">{showExplanation ? '隐藏' : '显示'}</span>
+                              <span className="hidden sm:inline">{showExplanation ? t('results.hide_explanation') : t('results.show_explanation')}</span>
+                <span className="sm:hidden">{showExplanation ? t('common.hide', { defaultValue: '隐藏' }) : t('common.show', { defaultValue: '显示' })}</span>
             </button>
           </div>
         </div>
@@ -164,7 +166,7 @@ export const ResultsScreen = ({
               <XCircle className="w-4 h-4 text-danger-400 mr-2" />
             )}
             <span className="font-medium">
-              第 {hoveredQuestion + 1} 题 ({questions[hoveredQuestion].type})
+              {t('results.question_num_type', { num: hoveredQuestion + 1, type: questions[hoveredQuestion].type })}
             </span>
           </div>
           <p className="text-sm mb-3">{questions[hoveredQuestion].text}</p>
@@ -172,7 +174,7 @@ export const ResultsScreen = ({
           {/* 显示选项 */}
           {questions[hoveredQuestion].type !== '填空题' && (
             <div className="mb-3">
-              <p className="text-xs text-gray-400 mb-2">选项:</p>
+              <p className="text-xs text-gray-400 mb-2">{t('results.options_label')}:</p>
               <div className="space-y-1">
                 {(() => {
                   const question = questions[hoveredQuestion];
@@ -226,7 +228,7 @@ export const ResultsScreen = ({
                     return (
                       <div key={optIndex} className={`${className} flex justify-between items-center`}>
                         <span>{letter}. {option}</span>
-                        {isUserAnswer && <span className="text-xs text-orange-400 border border-orange-400 bg-orange-50 px-1 rounded font-bold">您的选择</span>}
+                        {isUserAnswer && <span className="text-xs text-orange-400 border border-orange-400 bg-orange-50 px-1 rounded font-bold">{t('results.your_choice')}</span>}
                       </div>
                     );
                   });
@@ -237,14 +239,14 @@ export const ResultsScreen = ({
           
           <div className="border-t border-gray-700 pt-2">
             <p className="text-xs text-gray-300">
-              您的答案: {formatJudgmentAnswer(results[hoveredQuestion].userAnswer, questions[hoveredQuestion], settings)}
+              {t('quizui.your_answer')} {formatJudgmentAnswer(results[hoveredQuestion].userAnswer, questions[hoveredQuestion], settings)}
             </p>
             <p className="text-xs text-gray-300">
-              正确答案: {formatCorrectAnswer(questions[hoveredQuestion], settings)}
+              {t('quizui.correct_answer')} {formatCorrectAnswer(questions[hoveredQuestion], settings)}
             </p>
             {showExplanation && questions[hoveredQuestion].explanation && (
               <div className="mt-2 pt-2 border-t border-gray-700">
-                <p className="text-xs text-gray-400 mb-1">解析:</p>
+                <p className="text-xs text-gray-400 mb-1">{t('quizui.explanation')}:</p>
                 <p className="text-xs text-gray-300 leading-relaxed">
                   {questions[hoveredQuestion].explanation}
                 </p>
@@ -259,24 +261,24 @@ export const ResultsScreen = ({
         {/* 答题回顾按钮独占一行 */}
         <button onClick={onReview} className="btn btn-primary flex items-center justify-center whitespace-nowrap sm:col-span-2 lg:col-span-3">
           <Eye className="w-4 h-4 mr-2" />
-          答题回顾
+          {t('results.review_quiz')}
         </button>
         
         {/* 重新答题、错题重练、返回答题共处一行 */}
         <div className="sm:col-span-2 lg:col-span-3 flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button onClick={onRetry} className="btn btn-success flex items-center justify-center whitespace-nowrap flex-1">
             <RefreshCw className="w-4 h-4 mr-2" />
-            重新答题
+            {t('results.retry_quiz')}
           </button>
           {wrongQuestionsCount > 0 && (
             <button onClick={onRetryWrongQuestions} className="btn btn-danger flex items-center justify-center whitespace-nowrap flex-1">
               <XCircle className="w-4 h-4 mr-2" />
-              错题重练 ({wrongQuestionsCount})
+              {t('results.retry_wrong_questions', { count: wrongQuestionsCount })}
             </button>
           )}
           <button onClick={onBackToQuiz} className="btn btn-info flex items-center justify-center whitespace-nowrap flex-1">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            返回答题
+            {t('results.back_to_quiz')}
           </button>
         </div>
         
@@ -287,21 +289,21 @@ export const ResultsScreen = ({
             className="btn btn-warning flex items-center justify-center whitespace-nowrap flex-1"
           >
             <Download className="w-4 h-4 mr-2" />
-            导出Excel
+            {t('results.export_excel')}
           </button>
           <button 
             onClick={() => exportToHTML({ questions, results, settings, examSettings, stats })}
             className="btn btn-info flex items-center justify-center whitespace-nowrap flex-1"
           >
             <Download className="w-4 h-4 mr-2" />
-            导出HTML
+            {t('results.export_html')}
           </button>
         </div>
         
         {/* 返回主页按钮独占一行 */}
         <button onClick={onBackToUpload} className="btn btn-secondary flex items-center justify-center whitespace-nowrap sm:col-span-2 lg:col-span-3">
           <Home className="w-4 h-4 mr-2" />
-          返回主页
+          {t('app.back_home')}
         </button>
       </div>
 
@@ -312,13 +314,13 @@ export const ResultsScreen = ({
             <div className="flex items-center mb-4">
               <Download className="w-6 h-6 text-warning-600 mr-3" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                选择导出格式
+                {t('results.export_format_title')}
               </h3>
             </div>
             
             <div className="mb-6">
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                请选择要导出的Excel格式：
+                {t('results.export_format_description')}
               </p>
               
               <div className="space-y-3">
@@ -332,9 +334,9 @@ export const ResultsScreen = ({
                     className="mr-3"
                   />
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">Excel (.xlsx)</div>
+                    <div className="font-medium text-gray-900 dark:text-white">{t('results.excel_xlsx_label')}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      包含两个工作表：答题情况和答题总结
+                      {t('results.excel_xlsx_description')}
                     </div>
                   </div>
                 </label>
@@ -349,9 +351,9 @@ export const ResultsScreen = ({
                     className="mr-3"
                   />
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">CSV (.csv)</div>
+                    <div className="font-medium text-gray-900 dark:text-white">{t('results.csv_label')}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      仅包含答题情况，适合数据分析
+                      {t('results.csv_description')}
                     </div>
                   </div>
                 </label>
@@ -363,13 +365,13 @@ export const ResultsScreen = ({
                 onClick={() => setShowExportDialog(false)}
                 className="btn btn-secondary"
               >
-                取消
+                {t('common.cancel', { defaultValue: '取消' })}
               </button>
               <button
                 onClick={handleExportExcel}
                 className="btn btn-warning"
               >
-                确认导出
+                {t('common.confirm_export', { defaultValue: '确认导出' })}
               </button>
             </div>
           </div>

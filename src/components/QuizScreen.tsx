@@ -1130,7 +1130,7 @@ export const QuizScreen = ({
                         {letter}. {option}
                         {isCorrectAnswer && settings.mode === 'recite' && (
                           <span className="ml-2 text-success-600 dark:text-success-400 text-sm font-medium">
-                            ✓ 正确答案
+                            ✓ {t('quizui.correct_answer')}
                           </span>
                         )}
                       </span>

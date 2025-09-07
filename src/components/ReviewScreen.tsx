@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Filter, CheckCircle, XCircle, Home, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, Search, X, Eye, EyeOff } from 'lucide-react';
 import { Question, QuestionResult, QuizSettings } from '../types';
 import { checkAnswer } from '../utils/quiz';
+import { useTranslation } from 'react-i18next';
 
 interface ReviewScreenProps {
   questions: Question[];
@@ -31,6 +32,7 @@ export const ReviewScreen = ({
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [showExplanations, setShowExplanations] = useState(true);
+  const { t } = useTranslation();
 
 
   const filteredQuestions = useMemo(() => {
@@ -156,7 +158,7 @@ export const ReviewScreen = ({
             <button
               onClick={scrollToTop}
               className="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center"
-              title="回到顶部"
+              title={t('review.scroll_to_top')}
             >
               <ArrowUp className="w-5 h-5" />
             </button>
@@ -165,7 +167,7 @@ export const ReviewScreen = ({
             <button
               onClick={scrollToBottom}
               className="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center"
-              title="跳转到底部"
+              title={t('review.scroll_to_bottom')}
             >
               <ArrowDown className="w-5 h-5" />
             </button>
@@ -177,16 +179,16 @@ export const ReviewScreen = ({
       <div className="flex items-center justify-between mb-6">
         <button onClick={onBack} className="btn btn-secondary text-sm px-2 sm:px-3 py-2">
           <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">返回结果</span>
-          <span className="sm:hidden">返回</span>
+          <span className="hidden sm:inline">{t('review.back_to_results')}</span>
+          <span className="sm:hidden">{t('common.back', { defaultValue: '返回' })}</span>
         </button>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white px-2">
-          答题回顾
+          {t('review.review_title')}
         </h1>
         <button onClick={onBackToUpload} className="btn btn-primary text-sm px-2 sm:px-3 py-2">
           <Home className="w-4 h-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">返回主页</span>
-          <span className="sm:hidden">主页</span>
+          <span className="hidden sm:inline">{t('app.back_home')}</span>
+          <span className="sm:hidden">{t('app.home_short', { defaultValue: '主页' })}</span>
         </button>
       </div>
 
@@ -194,13 +196,13 @@ export const ReviewScreen = ({
       <div className="card p-4 mb-6">
         <div className="flex items-center mb-4">
           <Filter className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
-          <span className="font-medium text-gray-700 dark:text-gray-300">筛选条件</span>
+          <span className="font-medium text-gray-700 dark:text-gray-300">{t('review.filters_title')}</span>
         </div>
 
         {/* Search Box */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            关键词搜索
+            {t('review.keyword_search_label')}
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -210,14 +212,14 @@ export const ReviewScreen = ({
               type="text"
               value={searchKeyword}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="搜索题干、选项或解析内容..."
+              placeholder={t('review.search_placeholder')}
               className="block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
             />
             {searchKeyword && (
               <button
                 onClick={clearSearch}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                title="清除搜索"
+                title={t('review.clear_search')}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -225,7 +227,7 @@ export const ReviewScreen = ({
           </div>
           {searchKeyword && (
             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              找到 {filteredQuestions.length} 个匹配结果
+              {t('review.search_results_count', { count: filteredQuestions.length })}
             </div>
           )}
         </div>
@@ -234,13 +236,13 @@ export const ReviewScreen = ({
           {/* Correctness Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              答题状态
+              {t('review.answer_status_label')}
             </label>
             <div className="flex space-x-2">
               {[
-                { value: 'all', label: '全部' },
-                { value: 'correct', label: '正确' },
-                { value: 'incorrect', label: '错误' }
+                { value: 'all', label: t('review.status_all') },
+                { value: 'correct', label: t('review.status_correct') },
+                { value: 'incorrect', label: t('review.status_incorrect') }
               ].map((filter) => (
                 <button
                   key={filter.value}
@@ -260,7 +262,7 @@ export const ReviewScreen = ({
           {/* Type Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              题目类型
+              {t('review.question_type_label')}
             </label>
             <div className="flex flex-wrap gap-2">
               <button
@@ -271,7 +273,7 @@ export const ReviewScreen = ({
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
-                所有类型
+                {t('review.type_all')}
               </button>
               {questionTypes.map((type) => (
                 <button
@@ -294,7 +296,7 @@ export const ReviewScreen = ({
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              显示选项
+              {t('review.display_options_label')}
             </label>
             <div className="flex items-center space-x-4">
               <button
@@ -304,14 +306,14 @@ export const ReviewScreen = ({
                     ? 'bg-primary-600 text-white'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
-                title={showExplanations ? '隐藏解析' : '显示解析'}
+                title={showExplanations ? t('results.hide_explanation') : t('results.show_explanation')}
               >
                 {showExplanations ? (
                   <Eye className="w-4 h-4" />
                 ) : (
                   <EyeOff className="w-4 h-4" />
                 )}
-                <span>解析</span>
+                <span>{t('review.explanation_toggle_label')}</span>
                 {questionsWithExplanations > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 bg-white/20 dark:bg-black/20 rounded-full text-xs">
                     {questionsWithExplanations}
@@ -327,15 +329,15 @@ export const ReviewScreen = ({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                每页显示:
+                {t('review.per_page_label')}:
               </label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { value: 5, label: '5题' },
-                  { value: 10, label: '10题' },
-                  { value: 20, label: '20题' },
-                  { value: 50, label: '50题' },
-                  { value: 100, label: '100题' }
+                  { value: 5, label: t('review.items_per_page', { count: 5 }) },
+                  { value: 10, label: t('review.items_per_page', { count: 10 }) },
+                  { value: 20, label: t('review.items_per_page', { count: 20 }) },
+                  { value: 50, label: t('review.items_per_page', { count: 50 }) },
+                  { value: 100, label: t('review.items_per_page', { count: 100 }) }
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -352,7 +354,7 @@ export const ReviewScreen = ({
               </div>
             </div>
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              共 {filteredQuestions.length} 题，第 {currentPage} / {totalPages} 页
+              {t('review.pagination_summary', { filteredCount: filteredQuestions.length, currentPage: currentPage, totalPages: totalPages })}
             </div>
           </div>
         </div>
@@ -363,7 +365,7 @@ export const ReviewScreen = ({
         {currentQuestions.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400">
-              没有符合筛选条件的题目
+              {t('review.no_matching_questions')}
             </p>
           </div>
         ) : (
@@ -390,7 +392,7 @@ export const ReviewScreen = ({
                       <XCircle className="w-5 h-5 text-danger-600" />
                     )}
                     <span className="font-medium text-gray-900 dark:text-white">
-                      第 {originalIndex + 1} 题
+                      {t('review.question_num', { num: originalIndex + 1 })}
                     </span>
                     <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm">
                       {question.type}
@@ -456,7 +458,7 @@ export const ReviewScreen = ({
                             </span>
                             {isUserSelected && (
                               <span className="px-2 py-1 bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-200 rounded-full text-xs font-medium">
-                                您的选择
+                                {t('review.your_choice')}
                               </span>
                             )}
                           </div>
@@ -471,7 +473,7 @@ export const ReviewScreen = ({
                   <div className="space-y-3 mb-4">
                     <div>
                       <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        您的答案:
+                        {t('review.your_answer_label')}:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {(userAnswer || '').split(settings.fillBlankSeparator || '|').map((ans, i) => (
@@ -483,14 +485,14 @@ export const ReviewScreen = ({
                                 : 'bg-danger-100 dark:bg-danger-900/30 text-danger-800 dark:text-danger-200'
                             }`}
                           >
-                            {ans.trim() || '(未填写)'}
+                            {ans.trim() || t('review.not_filled')}
                           </span>
                         ))}
                       </div>
                     </div>
                     <div>
                       <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        正确答案:
+                        {t('review.correct_answer_label')}:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {question.answer.split(settings.fillBlankSeparator || '|').map((ans, i) => (
@@ -510,7 +512,7 @@ export const ReviewScreen = ({
                 {question.explanation && showExplanations && (
                   <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
                     <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                      解析:
+                      {t('review.explanation_label')}:
                     </p>
                     <p className="text-blue-700 dark:text-blue-300">
                       {highlightKeyword(question.explanation, searchKeyword)}
@@ -533,7 +535,7 @@ export const ReviewScreen = ({
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
                 className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="第一页"
+                title={t('review.first_page')}
               >
                 <ChevronsLeft className="w-4 h-4" />
               </button>
@@ -543,6 +545,7 @@ export const ReviewScreen = ({
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={t('quizui.prev')}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -582,6 +585,7 @@ export const ReviewScreen = ({
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
                 className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={t('quizui.next')}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -591,7 +595,7 @@ export const ReviewScreen = ({
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
                 className="btn btn-secondary px-2 sm:px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="最后一页"
+                title={t('review.last_page')}
               >
                 <ChevronsRight className="w-4 h-4" />
               </button>

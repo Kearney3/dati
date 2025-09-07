@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { QuizSettings as QuizSettingsType, ExamSettings } from '../types';
 import { ExamConfig } from './ExamConfig';
+import { useTranslation } from 'react-i18next';
 
 interface QuizSettingsProps {
   settings: QuizSettingsType;
@@ -21,6 +22,7 @@ export const QuizSettings = ({
   selectedSheets = [],
   questions = []
 }: QuizSettingsProps) => {
+  const { t } = useTranslation();
   const [dragState, setDragState] = useState<{
     isDragging: boolean;
     rangeIndex: number;
@@ -102,10 +104,10 @@ export const QuizSettings = ({
       <div className="space-y-6">
         <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            答题设置
+            {t('quizsettings.title')}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            配置答题模式、顺序和范围等基本设置
+            {t('quizsettings.description')}
           </p>
         </div>
         
@@ -113,14 +115,14 @@ export const QuizSettings = ({
           {/* 答题模式 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              答题模式
+              {t('quizsettings.mode_label')}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { value: 'quiz', label: '答题模式', desc: '正常答题，提交后查看结果' },
-                { value: 'review', label: '复习模式', desc: '可随时查看答案和解析' },
-                { value: 'recite', label: '背题模式', desc: '直接显示答案，用于记忆' },
-                { value: 'exam', label: '考试模式', desc: '按题型配置出题数量和分值' }
+                { value: 'quiz', label: t('quizsettings.mode_quiz_label'), desc: t('quizsettings.mode_quiz_desc') },
+                { value: 'review', label: t('quizsettings.mode_review_label'), desc: t('quizsettings.mode_review_desc') },
+                { value: 'recite', label: t('quizsettings.mode_recite_label'), desc: t('quizsettings.mode_recite_desc') },
+                { value: 'exam', label: t('quizsettings.mode_exam_label'), desc: t('quizsettings.mode_exam_desc') }
               ].map((mode) => (
                 <label key={mode.value} className="relative flex cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 p-4 focus:outline-none hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
                   <input
@@ -156,12 +158,12 @@ export const QuizSettings = ({
           {/* 题目顺序 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              题目顺序
+              {t('quizsettings.order_label')}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { value: 'sequential', label: '顺序出题', desc: '按照题目原有顺序进行答题' },
-                { value: 'random', label: '随机出题', desc: '随机打乱题目顺序进行答题' }
+                { value: 'sequential', label: t('quizsettings.order_sequential_label'), desc: t('quizsettings.order_sequential_desc') },
+                { value: 'random', label: t('quizsettings.order_random_label'), desc: t('quizsettings.order_random_desc') }
               ].map((order) => (
                 <label key={order.value} className="relative flex cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 p-4 focus:outline-none hover:border-primary-300 dark:hover:border-primary-600 transition-colors">
                   <input
@@ -198,7 +200,7 @@ export const QuizSettings = ({
           {settings.mode !== 'exam' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                答题数量
+                {t('quizsettings.limit_label')}
               </label>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
@@ -227,7 +229,7 @@ export const QuizSettings = ({
                 </div>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                0表示不限制题目数量，最大{maxQuestions}题（会受答题范围影响）
+                {t('quizsettings.limit_desc', { maxQuestions: maxQuestions })}
               </p>
             </div>
           )}
@@ -237,7 +239,7 @@ export const QuizSettings = ({
             <div>
               <div className="flex items-center justify-between mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  答题范围
+                  {t('quizsettings.range_label')}
                 </label>
                 <button
                   type="button"
@@ -248,7 +250,7 @@ export const QuizSettings = ({
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                   }`}
                 >
-                  {settings.useCustomRanges ? '自定义范围' : '全选'}
+                  {settings.useCustomRanges ? t('quizsettings.custom_range') : t('quizsettings.select_all')}
                 </button>
               </div>
               
@@ -257,7 +259,7 @@ export const QuizSettings = ({
                   {/* 可视化答题范围 */}
                   <div className="mb-4">
                     <label className="block text-xs text-gray-600 dark:text-gray-400 mb-2">
-                      答题范围可视化
+                      {t('quizsettings.range_visualization_label')}
                     </label>
                     <div className="relative h-8 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
                       {/* 背景网格 */}
@@ -281,7 +283,7 @@ export const QuizSettings = ({
                               left: `${startPercent}%`,
                               width: `${width}%`
                             }}
-                            title={`范围 ${index + 1}: ${range.start}-${range.end}`}
+                            title={t('quizsettings.range_n', { index: index + 1, start: range.start, end: range.end })}
                           ></div>
                         );
                       })}
@@ -299,7 +301,7 @@ export const QuizSettings = ({
                     <div key={index} data-range-index={index} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="block text-xs text-gray-600 dark:text-gray-400">
-                          范围 {index + 1}
+                          {t('quizsettings.range_n_short', { index: index + 1 })}
                         </label>
                         <button
                           type="button"
@@ -309,7 +311,7 @@ export const QuizSettings = ({
                           }}
                           className="px-2 py-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs"
                         >
-                          删除
+                          {t('common.delete', { defaultValue: '删除' })}
                         </button>
                       </div>
                       
@@ -358,7 +360,7 @@ export const QuizSettings = ({
                               width: `${((range.end - range.start + 1) / totalQuestions) * 100}%`
                             }}
                             onMouseDown={(e) => handleRangeDragStart(e, index)}
-                            title="拖拽移动范围"
+                            title={t('quizsettings.drag_to_move')}
                           ></div>
                         </div>
                       
@@ -412,12 +414,12 @@ export const QuizSettings = ({
                     }}
                     className="btn btn-secondary text-sm"
                   >
-                    添加范围
+                    {t('quizsettings.add_range')}
                   </button>
                 </div>
               ) : (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  将答题所有题目（1-{totalQuestions}）
+                  {t('quizsettings.all_questions_range', { totalQuestions: totalQuestions })}
                 </p>
               )}
             </div>
@@ -428,7 +430,7 @@ export const QuizSettings = ({
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  判断题选项配置
+                  {t('quizsettings.judgement_options_title')}
                 </label>
                 <div className="relative group">
                   <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-help hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -437,12 +439,12 @@ export const QuizSettings = ({
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
                     <div className="relative">
                       <div className="mb-2">
-                        <strong>宽容机制说明：</strong>
+                        <strong>{t('quizsettings.tolerance_mechanism_title')}</strong>
                       </div>
                       <div className="text-xs space-y-1">
-                        <div>• 支持多种正确答案格式</div>
-                        <div>• 如：A/B、对/错、正确/错误</div>
-                        <div>• 系统会自动识别和匹配</div>
+                        <div>• {t('quizsettings.tolerance_mechanism_desc1')}</div>
+                        <div>• {t('quizsettings.tolerance_mechanism_desc2')}</div>
+                        <div>• {t('quizsettings.tolerance_mechanism_desc3')}</div>
                       </div>
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                     </div>
@@ -453,26 +455,26 @@ export const QuizSettings = ({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    判断题正确选项
+                    {t('quizsettings.judgement_true_label')}
                   </label>
                   <input
                     type="text"
                     value={settings.judgementTrue}
                     onChange={(e) => handleChange('judgementTrue', e.target.value)}
                     className="input"
-                    placeholder="正确"
+                    placeholder={t('quizsettings.judgement_true_placeholder')}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    判断题错误选项
+                    {t('quizsettings.judgement_false_label')}
                   </label>
                   <input
                     type="text"
                     value={settings.judgementFalse}
                     onChange={(e) => handleChange('judgementFalse', e.target.value)}
                     className="input"
-                    placeholder="错误"
+                    placeholder={t('quizsettings.judgement_false_placeholder')}
                   />
                 </div>
               </div>
@@ -484,7 +486,7 @@ export const QuizSettings = ({
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  填空题答案分隔符配置
+                  {t('quizsettings.fill_blank_separator_title')}
                 </label>
                 <div className="relative group">
                   <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-help hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -493,12 +495,12 @@ export const QuizSettings = ({
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
                     <div className="relative">
                       <div className="mb-2">
-                        <strong>分隔符说明：</strong>
+                        <strong>{t('quizsettings.separator_description_title')}</strong>
                       </div>
                       <div className="text-xs space-y-1">
-                        <div>• 用于分隔填空题的多个答案</div>
-                        <div>• 如：答案1|答案2|答案3</div>
-                        <div>• 建议选择不常用的字符组合</div>
+                        <div>• {t('quizsettings.separator_description_desc1')}</div>
+                        <div>• {t('quizsettings.separator_description_desc2')}</div>
+                        <div>• {t('quizsettings.separator_description_desc3')}</div>
                       </div>
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                     </div>
@@ -510,14 +512,14 @@ export const QuizSettings = ({
                 {/* 预设分隔符选项 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    预设分隔符
+                    {t('quizsettings.preset_separator_label')}
                   </label>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                     {[
-                      { value: '|', label: '竖线分隔', desc: '| (推荐)' },
-                      { value: '/', label: '斜线分隔', desc: '/' },
-                      { value: '#', label: '井号分隔', desc: '#' },
-                      { value: '、', label: '顿号分隔', desc: '、' }
+                      { value: '|', label: t('quizsettings.separator_pipe_label'), desc: '| ' + t('common.recommended') },
+                      { value: '/', label: t('quizsettings.separator_slash_label'), desc: '/' },
+                      { value: '#', label: t('quizsettings.separator_hash_label'), desc: '#' },
+                      { value: '、', label: t('quizsettings.separator_dot_label'), desc: '、' }
                     ].map((separator) => (
                       <button
                         key={separator.value}
@@ -539,17 +541,17 @@ export const QuizSettings = ({
                 {/* 自定义分隔符 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    自定义分隔符
+                    {t('quizsettings.custom_separator_label')}
                   </label>
                   <input
                     type="text"
                     value={settings.fillBlankSeparator}
                     onChange={(e) => handleChange('fillBlankSeparator', e.target.value)}
                     className="input font-mono"
-                    placeholder="输入自定义分隔符，如: |"
+                    placeholder={t('quizsettings.custom_separator_placeholder')}
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    当前分隔符: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">{settings.fillBlankSeparator || '|||'}</code>
+                    {t('quizsettings.current_separator')}: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">{settings.fillBlankSeparator || '|||'}</code>
                   </p>
                 </div>
               </div>
@@ -567,10 +569,10 @@ export const QuizSettings = ({
           {/* 考试配置标题 */}
           <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              考试配置
+              {t('quizsettings.exam_config_title')}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              为每种题型设置出题数量和分值，配置考试规则
+              {t('quizsettings.exam_config_description')}
             </p>
           </div>
           

@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
 import { Upload, FileText, AlertCircle } from 'lucide-react';
 import { parseExcelFile } from '../utils/excel';
+import { useTranslation } from 'react-i18next';
 
 interface FileUploadProps {
   onFileLoaded: (workbook: any) => void;
 }
 
 export const FileUpload = ({ onFileLoaded }: FileUploadProps) => {
+  const { t } = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState('');
@@ -14,7 +16,7 @@ export const FileUpload = ({ onFileLoaded }: FileUploadProps) => {
 
   const handleFile = async (file: File) => {
     if (!file.name.match(/\.(xlsx|xls)$/i)) {
-      setError('请选择Excel文件 (.xlsx 或 .xls)');
+      setError(t('fileupload.invalid_file_type'));
       return;
     }
 
@@ -24,7 +26,7 @@ export const FileUpload = ({ onFileLoaded }: FileUploadProps) => {
       const workbook = await parseExcelFile(file);
       onFileLoaded(workbook);
     } catch (err) {
-      setError('文件解析失败，请确保文件格式正确');
+      setError(t('fileupload.parsing_failed'));
       console.error('File parsing error:', err);
     }
   };
@@ -82,18 +84,18 @@ export const FileUpload = ({ onFileLoaded }: FileUploadProps) => {
           
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              上传Excel题库文件
+              {t('fileupload.upload_title')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              点击或拖拽Excel文件到这里
+              {t('fileupload.drag_drop_text')}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-              支持 .xlsx 和 .xls 格式
+              {t('fileupload.supported_formats')}
             </p>
             <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
               <div className="flex items-center justify-center gap-2 text-sm text-green-700 dark:text-green-300">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>🔒 隐私保护：文件仅在本机处理，不会上传到服务器</span>
+                <span>{t('fileupload.privacy_notice')}</span>
               </div>
             </div>
           </div>

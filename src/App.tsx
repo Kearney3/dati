@@ -42,8 +42,8 @@ export default function App() {
     mode: 'quiz',
     orderMode: 'sequential',
     limit: 0,
-    judgementTrue: '正确',
-    judgementFalse: '错误',
+    judgementTrue: t('quizsettings.judgement_true_placeholder'),
+    judgementFalse: t('quizsettings.judgement_false_placeholder'),
     questionRanges: [],
     useCustomRanges: false,
     fillBlankSeparator: '|'
@@ -253,7 +253,7 @@ export default function App() {
     if (settings.mode === 'exam' && examSettings) {
       const totalExamQuestions = examSettings.totalQuestions;
       if (totalExamQuestions === 0) {
-        showAlert('warning', '考试配置中题目数量为0', '考试配置中题目数量为0');
+        showAlert('warning', t('exam.exam_questions_zero_title'), t('exam.exam_questions_zero_desc'));
         return;
       }
       
@@ -263,7 +263,8 @@ export default function App() {
       );
       
       if (invalidConfigs.length > 0) {
-        showAlert('warning', `以下题型的配置超出实际题目数量：${invalidConfigs.map(c => c.questionType).join(', ')}`, `以下题型的配置超出实际题目数量：${invalidConfigs.map(c => c.questionType).join(', ')}`);
+        const invalidTypes = invalidConfigs.map(c => c.questionType).join(', ');
+        showAlert('warning', t('exam.exceed_available_types_title', { types: invalidTypes }), t('exam.exceed_available_types_desc', { types: invalidTypes }));
         return;
       }
     }
@@ -477,7 +478,7 @@ export default function App() {
                     headers={headers}
                     mapping={mapping}
                     onMappingChange={handleMappingChange}
-                    sheetName="全局映射"
+                    sheetName={t('app.global_mapping_sheet_name')}
                   />
                 </div>
               )}

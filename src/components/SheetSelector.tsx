@@ -3,6 +3,7 @@ import { Check, Settings, X, Globe, FileText } from 'lucide-react';
 import { MultiSheetConfig, SheetConfig, HeaderMapping } from '../types';
 import { StatusBanner } from './StatusBanner';
 import { getSheetData } from '../utils/excel';
+import { useTranslation } from 'react-i18next';
 
 interface SheetSelectorProps {
   sheetNames: string[];
@@ -20,6 +21,7 @@ interface SheetMappingModalProps {
 
 const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModalProps) => {
   const [mapping, setMapping] = useState<Partial<HeaderMapping>>(sheet.mapping);
+  const { t } = useTranslation();
 
   const handleSave = () => {
     onSave(sheet.sheetName, mapping);
@@ -48,16 +50,16 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
   };
 
   const MAPPING_CONFIG = {
-    question: { label: '题干', required: true },
-    type: { label: '题型', required: true },
-    answer: { label: '答案', required: true },
-    optionA: { label: '选项A', required: false },
-    optionB: { label: '选项B', required: false },
-    optionC: { label: '选项C', required: false },
-    optionD: { label: '选项D', required: false },
-    optionE: { label: '选项E', required: false },
-    optionF: { label: '选项F', required: false },
-    explanation: { label: '解析', required: false },
+    question: { label: t('mapping.labels.question'), required: true },
+    type: { label: t('mapping.labels.type'), required: true },
+    answer: { label: t('mapping.labels.answer'), required: true },
+    optionA: { label: t('mapping.labels.optionA'), required: false },
+    optionB: { label: t('mapping.labels.optionB'), required: false },
+    optionC: { label: t('mapping.labels.optionC'), required: false },
+    optionD: { label: t('mapping.labels.optionD'), required: false },
+    optionE: { label: t('mapping.labels.optionE'), required: false },
+    optionF: { label: t('mapping.labels.optionF'), required: false },
+    explanation: { label: t('mapping.labels.explanation'), required: false },
   } as const;
 
   return (
@@ -68,7 +70,7 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            配置表头映射 - {sheet.sheetName}
+            {t('sheetselector.config_mapping_title', { sheetName: sheet.sheetName })}
           </h3>
           <button
             onClick={onClose}
@@ -80,7 +82,7 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
         
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            为 {sheet.sheetName} 工作表配置独立的表头映射
+            {t('sheetselector.config_mapping_description', { sheetName: sheet.sheetName })}
           </p>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -95,7 +97,7 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
                   onChange={(e) => setMapping({ ...mapping, [key]: e.target.value })}
                   className="input"
                 >
-                  <option value="">-- 请选择 --</option>
+                  <option value="">{t('mapping.select_placeholder')}</option>
                   {headers.map((header) => (
                     <option key={header} value={header}>
                       {header}
@@ -111,13 +113,13 @@ const SheetMappingModal = ({ sheet, headers, onClose, onSave }: SheetMappingModa
               onClick={onClose}
               className="btn btn-secondary"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSave}
               className="btn btn-primary"
             >
-              保存
+              {t('common.save', { defaultValue: '保存' })}
             </button>
           </div>
         </div>
@@ -133,6 +135,7 @@ export const SheetSelector = ({
 }: SheetSelectorProps) => {
   const [selectedSheetForMapping, setSelectedSheetForMapping] = useState<SheetConfig | null>(null);
   const [sheetHeaders, setSheetHeaders] = useState<string[]>([]);
+  const { t } = useTranslation();
 
   const handleSelectAll = () => {
     const newSheets = multiSheetConfig.sheets.map(sheet => ({
@@ -259,7 +262,7 @@ export const SheetSelector = ({
     const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
     
     if (selectedSheets.length === 0) {
-      return { isValid: false, message: '请选择工作表', description: '请至少选择一个工作表以继续配置' };
+      return { isValid: false, message: t('sheetselector.select_sheet_warning_title'), description: t('sheetselector.select_sheet_warning_desc') };
     }
 
     const requiredFields = ['question', 'type', 'answer'];
@@ -284,25 +287,25 @@ export const SheetSelector = ({
     
     // 检查独立映射错误
     if (invalidIndependentSheets.length > 0) {
-      errorMessage = '独立映射配置不完整';
-      errorDescription = `以下工作表的映射配置不完整：${invalidIndependentSheets.map(s => s.sheetName).join('、')}`;
+      errorMessage = t('sheetselector.independent_mapping_incomplete_title');
+      errorDescription = t('sheetselector.independent_mapping_incomplete_desc', { sheets: invalidIndependentSheets.map(s => s.sheetName).join('、') });
     }
     
     // 检查全局映射错误（只有当有工作表使用全局映射时才检查）
     if (isGlobalMappingIncomplete && hasGlobalMappingSheets) {
       const missingLabels = globalMappingMissingFields.map(field => {
-        const fieldLabels = { question: '题干', type: '题型', answer: '答案' };
+        const fieldLabels = { question: t('mapping.labels.question'), type: t('mapping.labels.type'), answer: t('mapping.labels.answer') };
         return fieldLabels[field as keyof typeof fieldLabels];
       });
       
       if (errorMessage) {
         // 如果已经有独立映射错误，则合并显示
-        errorMessage = '映射配置不完整';
-        errorDescription = `${errorDescription}；全局映射缺少：${missingLabels.join('、')}`;
+        errorMessage = t('sheetselector.mapping_incomplete_title');
+        errorDescription = `${errorDescription}；${t('sheetselector.global_mapping_missing_desc', { fields: missingLabels.join('、') })}`;
       } else {
         // 只有全局映射错误
-        errorMessage = '全局映射配置不完整';
-        errorDescription = `缺少必填字段：${missingLabels.join('、')}`;
+        errorMessage = t('sheetselector.global_mapping_incomplete_title');
+        errorDescription = t('sheetselector.global_mapping_missing_desc', { fields: missingLabels.join('、') });
       }
     }
     
@@ -310,7 +313,7 @@ export const SheetSelector = ({
       return { isValid: false, message: errorMessage, description: errorDescription };
     }
 
-    return { isValid: true, message: '配置有效', description: '所有映射配置已完整' };
+    return { isValid: true, message: t('sheetselector.config_valid_title'), description: t('sheetselector.config_valid_desc') };
   };
 
   const configValidity = checkConfigurationValidity();
@@ -350,20 +353,20 @@ export const SheetSelector = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          工作表选择
+          {t('sheetselector.title')}
         </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={handleSelectAll}
             className="btn btn-secondary text-xs px-3 py-1"
           >
-            全选
+            {t('sheetselector.select_all')}
           </button>
           <button
             onClick={handleDeselectAll}
             className="btn btn-secondary text-xs px-3 py-1"
           >
-            取消全选
+            {t('sheetselector.deselect_all')}
           </button>
         </div>
       </div>
@@ -375,7 +378,7 @@ export const SheetSelector = ({
             <div className="flex items-center gap-2">
               <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span className="font-medium text-gray-900 dark:text-white">
-                统一全局映射
+                {t('sheetselector.global_mapping_toggle_label')}
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -389,7 +392,7 @@ export const SheetSelector = ({
             </label>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            启用后，所有工作表将使用统一的全局映射配置
+            {t('sheetselector.global_mapping_toggle_description')}
           </p>
         </div>
 
@@ -422,7 +425,7 @@ export const SheetSelector = ({
                       {sheet.sheetName}
                     </span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      ({sheet.questionCount} 条数据)
+                      {t('sheetselector.data_count', { count: sheet.questionCount })}
                     </span>
                   </div>
                 </div>
@@ -439,11 +442,11 @@ export const SheetSelector = ({
                             : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
                         } ${multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping ? 'cursor-not-allowed opacity-50' : ''}`}
                         disabled={multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping}
-                        title={multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping ? "全局映射已启用，无法单独控制" : "切换使用全局映射"}
+                        title={multiSheetConfig.useGlobalMapping && !sheet.useGlobalMapping ? t('sheetselector.global_mapping_disabled_tip') : t('sheetselector.toggle_global_mapping_tip')}
                       >
                         <Globe className="w-4 h-4" />
-                        <span className="hidden sm:inline">使用全局映射</span>
-                        <span className="sm:hidden">全局映射</span>
+                        <span className="hidden sm:inline">{t('sheetselector.use_global_mapping')}</span>
+                        <span className="sm:hidden">{t('sheetselector.global_mapping_short')}</span>
                       </button>
                       
                       {/* 独立映射按钮 */}
@@ -455,11 +458,11 @@ export const SheetSelector = ({
                             : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 border border-gray-200 dark:border-gray-600 cursor-not-allowed'
                         }`}
                         disabled={sheet.useGlobalMapping}
-                        title={sheet.useGlobalMapping ? "请先取消使用全局映射" : "配置独立映射"}
+                        title={sheet.useGlobalMapping ? t('sheetselector.independent_mapping_disabled_tip') : t('sheetselector.config_independent_mapping_tip')}
                       >
                         <Settings className="w-4 h-4" />
-                        <span className="hidden sm:inline">独立映射配置</span>
-                        <span className="sm:hidden">独立映射</span>
+                        <span className="hidden sm:inline">{t('sheetselector.independent_mapping_config')}</span>
+                        <span className="sm:hidden">{t('sheetselector.independent_mapping_short')}</span>
                       </button>
                     </>
                   )}
@@ -470,14 +473,14 @@ export const SheetSelector = ({
                 <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Check className="w-4 h-4 text-green-500" />
-                    <span>已选择</span>
+                    <span>{t('sheetselector.selected_status')}</span>
                     {sheet.useGlobalMapping ? (
                       <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                        使用全局映射
+                        {t('sheetselector.use_global_mapping_status')}
                       </span>
                     ) : (
                       <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-                        使用独立映射
+                        {t('sheetselector.use_independent_mapping_status')}
                       </span>
                     )}
                   </div>
@@ -492,12 +495,12 @@ export const SheetSelector = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">
-                已选择 {selectedCount} / {totalCount} 个工作表
+                {t('sheetselector.sheets_summary', { selectedCount: selectedCount, totalCount: totalCount })}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                总计数据条数: {multiSheetConfig.sheets
+                {t('sheetselector.total_data_count', { count: multiSheetConfig.sheets
                   .filter(sheet => sheet.isSelected)
-                  .reduce((sum, sheet) => sum + sheet.questionCount, 0)} 条
+                  .reduce((sum, sheet) => sum + sheet.questionCount, 0) })}
               </p>
             </div>
           </div>
@@ -509,8 +512,8 @@ export const SheetSelector = ({
             return (
               <StatusBanner
                 type="info"
-                title="请选择工作表"
-                description="请至少选择一个工作表以继续配置"
+                title={t('sheetselector.select_sheet_warning_title')}
+                description={t('sheetselector.select_sheet_warning_desc')}
               />
             );
           }
@@ -528,7 +531,7 @@ export const SheetSelector = ({
           return (
             <StatusBanner
               type="success"
-              title="配置有效"
+              title={t('sheetselector.config_valid_title')}
               description={configValidity.description}
             />
           );
