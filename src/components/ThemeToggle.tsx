@@ -1,130 +1,140 @@
-import { Moon, Sun, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Settings, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const ThemeToggle = () => {
   const { isDark, toggleTheme } = useTheme();
-  const [isVisible, setIsVisible] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
+  const { t, i18n } = useTranslation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isShrunk, setIsShrunk] = useState(true); // Start as shrunk to be a hint button
+  const componentRef = useRef<HTMLDivElement>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 自动隐藏逻辑
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+    setIsMenuOpen(false);
+  };
+
   useEffect(() => {
-    let hideTimeout: NodeJS.Timeout;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const button = document.querySelector('[data-theme-toggle]') as HTMLElement;
-      const hintButton = document.querySelector('[data-theme-hint]') as HTMLElement;
-      if (!button) return;
-
-      const rect = button.getBoundingClientRect();
-      const hintRect = hintButton?.getBoundingClientRect();
-      const isNearButton = 
-        e.clientX <= rect.right + 50 && 
-        e.clientX >= rect.left - 50 && 
-        e.clientY <= rect.bottom + 50 && 
-        e.clientY >= rect.top - 50;
-      
-      const isNearHint = hintRect ? 
-        e.clientX <= hintRect.right + 30 && 
-        e.clientX >= hintRect.left - 30 && 
-        e.clientY <= hintRect.bottom + 30 && 
-        e.clientY >= hintRect.top - 30 : false;
-
-      if (isNearButton || isNearHint || isHovered) {
-        setIsVisible(true);
-        clearTimeout(hideTimeout);
-      } else {
-        hideTimeout = setTimeout(() => {
-          if (!isHovered) {
-            setIsVisible(false);
-          }
-        }, 2000); // 2秒后自动隐藏
+    const handleClickOutside = (event: MouseEvent) => {
+      if (componentRef.current && !componentRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+        // If menu closes, and no hover, start shrink timeout
+        if (!componentRef.current.matches(':hover') && !hideTimeoutRef.current) {
+          hideTimeoutRef.current = setTimeout(() => {
+            setIsShrunk(true);
+            hideTimeoutRef.current = null;
+          }, 1000); // 1 second before shrinking after menu close
+        }
       }
     };
 
-    // 只在非悬停状态下添加鼠标移动监听
-    if (!isHovered) {
-      document.addEventListener('mousemove', handleMouseMove);
+    const handleMouseEnter = () => {
+      setIsShrunk(false);
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (!isMenuOpen && !hideTimeoutRef.current) {
+        hideTimeoutRef.current = setTimeout(() => {
+          setIsShrunk(true);
+          hideTimeoutRef.current = null;
+        }, 1000); // 1 second before shrinking after mouse leave
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    const currentRef = componentRef.current;
+    if (currentRef) {
+      currentRef.addEventListener('mouseenter', handleMouseEnter);
+      currentRef.addEventListener('mouseleave', handleMouseLeave);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      clearTimeout(hideTimeout);
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (currentRef) {
+        currentRef.removeEventListener('mouseenter', handleMouseEnter);
+        currentRef.removeEventListener('mouseleave', handleMouseLeave);
+      }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
     };
-  }, [isHovered]);
+  }, [componentRef, isMenuOpen]);
 
   return (
-    <>
-      {/* 主题切换按钮 */}
+    <div 
+      ref={componentRef} 
+      className={`fixed bottom-28 z-50 transition-all duration-300 transform 
+        ${isShrunk ? 'right-0 w-8 h-8 rounded-l-full pr-0.5' : 'right-8 w-14 h-14 rounded-full'}
+        bg-white/80 dark:bg-gray-800/80 shadow-lg border border-gray-200 dark:border-gray-700
+        hover:shadow-xl backdrop-blur-sm flex items-center justify-center cursor-pointer
+      `}
+    >
       <button
-        data-theme-toggle
-        onClick={toggleTheme}
-        onMouseEnter={() => {
-          setIsHovered(true);
-          setIsVisible(true);
-        }}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          // 延迟隐藏，给用户一些时间
-          setTimeout(() => {
-            if (!isHovered) {
-              setIsVisible(false);
+        onClick={() => {
+          if (isShrunk) {
+            setIsShrunk(false);
+            if (hideTimeoutRef.current) {
+              clearTimeout(hideTimeoutRef.current);
+              hideTimeoutRef.current = null;
             }
-          }, 1000);
+          } else {
+            setIsMenuOpen(!isMenuOpen);
+          }
         }}
-        className={`fixed bottom-20 left-4 p-3 rounded-full bg-white/80 dark:bg-gray-800/80 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300 z-50 backdrop-blur-sm ${
-          isVisible 
-            ? 'translate-x-0 opacity-100' 
-            : '-translate-x-12 opacity-0 hover:translate-x-0 hover:opacity-100'
-        }`}
-        title={isDark ? '切换到日间模式' : '切换到夜间模式'}
+        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 w-full h-full flex items-center justify-center"
+        title={t('theme_lang_toggle.toggle_menu', { defaultValue: 'Toggle Theme and Language Menu' })}
       >
-        {isDark ? (
-          <Sun className="w-6 h-6 text-yellow-500" />
+        {isMenuOpen ? (
+          <X className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+        ) : isShrunk ? (
+          <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
         ) : (
-          <Moon className="w-6 h-6 text-gray-600" />
+          <Settings className="w-6 h-6 text-gray-600 dark:text-gray-300" />
         )}
       </button>
 
-      {/* 半圆形提示按钮 - 只在主按钮隐藏时显示 */}
-      <button
-        data-theme-hint
-        onClick={() => {
-          setIsVisible(true);
-          setIsHovered(true);
-          // 点击提示按钮后，延迟重置悬停状态
-          setTimeout(() => {
-            setIsHovered(false);
-          }, 2000);
-        }}
-        onMouseEnter={() => {
-          setIsVisible(true);
-          setIsHovered(true);
-        }}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          // 延迟隐藏，给用户一些时间
-          setTimeout(() => {
-            if (!isHovered) {
-              setIsVisible(false);
-            }
-          }, 1000);
-        }}
-        className={`fixed bottom-20 left-0 p-2 bg-gray-100/60 dark:bg-gray-700/60 shadow-md border border-gray-200 dark:border-gray-600 hover:bg-gray-200/80 dark:hover:bg-gray-600/80 transition-all duration-300 z-40 backdrop-blur-sm ${
-          isVisible 
-            ? 'translate-x-0 opacity-0 pointer-events-none' 
-            : 'translate-x-0 opacity-100 pointer-events-auto'
-        }`}
-        style={{
-          borderTopLeftRadius: '0',
-          borderBottomLeftRadius: '0',
-          borderTopRightRadius: '20px',
-          borderBottomRightRadius: '20px',
-        }}
-        title="主题切换"
-      >
-        <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-      </button>
-    </>
+      {isMenuOpen && (
+        <div className="absolute bottom-full mb-2 right-0 w-48 bg-white/90 dark:bg-gray-800/90 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm overflow-hidden transform origin-bottom-right animate-fade-in-up">
+          <div className="p-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">{t('theme_lang_toggle.theme', { defaultValue: 'Theme' })}</h3>
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-between w-full p-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+            >
+              <span>{isDark ? t('theme_lang_toggle.light_mode', { defaultValue: 'Light Mode' }) : t('theme_lang_toggle.dark_mode', { defaultValue: 'Dark Mode' })}</span>
+              {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-gray-600" />}
+            </button>
+          </div>
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">{t('theme_lang_toggle.language', { defaultValue: 'Language' })}</h3>
+            <button
+              onClick={() => changeLanguage('zh')}
+              className={`flex items-center justify-between w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 ${
+                i18n.language?.startsWith('zh') ? 'bg-primary-500 text-white' : 'text-gray-700 dark:text-gray-200'
+              }`}
+            >
+              <span>{t('lang.zh', { defaultValue: '中文' })}</span>
+              {i18n.language?.startsWith('zh') && <ChevronRight className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => changeLanguage('en')}
+              className={`mt-1 flex items-center justify-between w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 ${
+                i18n.language?.startsWith('en') ? 'bg-primary-500 text-white' : 'text-gray-700 dark:text-gray-200'
+              }`}
+            >
+              <span>{t('lang.en', { defaultValue: 'English' })}</span>
+              {i18n.language?.startsWith('en') && <ChevronRight className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }; 
