@@ -9,6 +9,7 @@ import { ReviewScreen } from './components/ReviewScreen';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ToastContainer } from './components/ToastContainer';
 import { Github, Home } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { 
   Question,
   QuizSettings as QuizSettingsType, 
@@ -29,6 +30,7 @@ import { loadExamConfig, saveExamConfig } from './utils/storage';
 type Screen = 'upload' | 'config' | 'quiz' | 'results' | 'review';
 
 export default function App() {
+  const { t } = useTranslation();
   const [currentScreen, setCurrentScreen] = useState<Screen>('upload');
   const [workbook, setWorkbook] = useState<any>(null);
   const [sheetNames, setSheetNames] = useState<string[]>([]);
@@ -163,7 +165,7 @@ export default function App() {
       const isGlobalMappingIncomplete = requiredFields.some(field => !config.globalMapping[field as keyof HeaderMappingType]);
       
       if (isGlobalMappingIncomplete) {
-        showAlert('warning', '全局映射配置不完整', '请先完成全局映射配置');
+        showAlert('warning', t('mapping.status_missing'), t('quiz.start_warning_desc'));
         return;
       }
       
@@ -180,7 +182,7 @@ export default function App() {
         });
         
         if (invalidSheets.length > 0) {
-          showAlert('warning', `以下工作表的全局映射配置不完整：${invalidSheets.map(s => s.sheetName).join(', ')}`);
+          showAlert('warning', t('mapping.status_missing'), `${invalidSheets.map(s => s.sheetName).join(', ')}`);
         }
       }
     }
@@ -221,7 +223,7 @@ export default function App() {
     const selectedSheets = multiSheetConfig.sheets.filter(sheet => sheet.isSelected);
     
     if (selectedSheets.length === 0) {
-      showAlert('warning', '请至少选择一个工作表', '请先选择至少一个工作表');
+      showAlert('warning', t('quiz.select_sheet_warning_title'), t('quiz.select_sheet_warning_desc'));
       return;
     }
 
@@ -231,7 +233,7 @@ export default function App() {
     if (hasGlobalMappingSheets) {
       // 如果有工作表使用全局映射，检查全局映射是否配置完整
       if (!multiSheetConfig.globalMapping.question || !multiSheetConfig.globalMapping.type || !multiSheetConfig.globalMapping.answer) {
-        showAlert('warning', '请完成全局映射配置', '请先完成全局映射配置');
+        showAlert('warning', t('quiz.start_warning_title'), t('quiz.start_warning_desc'));
         return;
       }
     } else {
@@ -241,7 +243,8 @@ export default function App() {
       );
       
       if (incompleteSheets.length > 0) {
-        showAlert('warning', `以下工作表的独立映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`, `以下工作表的独立映射配置不完整：${incompleteSheets.map(s => s.sheetName).join(', ')}`);
+        const names = incompleteSheets.map(s => s.sheetName).join(', ');
+        showAlert('warning', t('mapping.status_missing'), names);
         return;
       }
     }
@@ -269,7 +272,7 @@ export default function App() {
     const allQuestions = processMultiSheetQuestions(workbook, selectedSheets, multiSheetConfig.globalMapping);
     
     if (allQuestions.length === 0) {
-      showAlert('warning', '无法生成题库', '无法生成题库，请检查Excel内容或全局映射是否正确！');
+      showAlert('warning', t('quiz.cannot_generate_title'), t('quiz.cannot_generate_desc'));
       return;
     }
 
@@ -324,7 +327,7 @@ export default function App() {
     );
     
     if (wrongQuestions.length === 0) {
-      showAlert('info', '没有错题', '恭喜您！所有题目都答对了，没有错题需要重新练习。');
+      showAlert('info', t('results.no_wrong_title'), t('results.no_wrong_desc'));
       return;
     }
     
@@ -390,11 +393,9 @@ export default function App() {
           {currentScreen === 'upload' && (
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                  智能答题系统
-                </h1>
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">{t('app.title')}</h1>
                 <p className="text-lg text-gray-600 dark:text-gray-400">
-                  {workbook ? '继续配置题库' : '上传您的Excel题库，开启个性化刷题之旅'}
+                  {workbook ? t('app.continue_config') : t('app.subtitle_upload')}
                 </p>
               </div>
               {workbook ? (
@@ -402,18 +403,16 @@ export default function App() {
                   <div className="card p-8 mb-6">
                     <div className="mb-4">
                       <div className="text-4xl mb-4">📊</div>
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        已上传题库文件
-                      </h2>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('app.uploaded_title')}</h2>
                       <p className="text-gray-600 dark:text-gray-400">
-                        包含 {sheetNames.length} 个工作表
+                        {t('app.contains_sheets', { count: sheetNames.length })}
                       </p>
                     </div>
                     <button
                       onClick={() => setCurrentScreen('config')}
                       className="btn btn-primary"
                     >
-                      继续配置
+                      {t('app.continue_config')}
                     </button>
                   </div>
                   <button
@@ -431,7 +430,7 @@ export default function App() {
                     }}
                     className="btn btn-secondary"
                   >
-                    重新上传文件
+                    {t('app.reupload')}
                   </button>
                 </div>
               ) : (
@@ -447,17 +446,15 @@ export default function App() {
                 <button
                   onClick={handleBackToUpload}
                   className="btn btn-secondary flex items-center gap-2 z-10"
-                  title="返回首页"
+                  title={t('app.back_home')}
                 >
                   <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">返回首页</span>
+                  <span className="hidden sm:inline">{t('app.back_home')}</span>
                 </button>
                 <div className="absolute inset-0 flex flex-col justify-center items-center">
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    配置题库
-                  </h1>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('app.configure_bank')}</h1>
                   <p className="text-gray-600 dark:text-gray-400">
-                    选择工作表并配置全局映射
+                    {t('app.select_and_map')}
                   </p>
                 </div>
                 <div className="w-24 z-10"></div> {/* 占位，保持标题居中 */}
@@ -507,7 +504,7 @@ export default function App() {
                     onClick={handleStartQuiz}
                     className="btn btn-primary text-lg px-8 py-3"
                   >
-                    开始答题
+                    {t('app.start_quiz')}
                   </button>
                 </div>
               )}
@@ -562,24 +559,20 @@ export default function App() {
       <footer className="py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <div className="container mx-auto px-4 min-w-[350px]">
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6">
-            <span className="text-gray-600 dark:text-gray-400 text-sm">
-              © 2024 dati - 支持Excel文件导入的多功能测验应用
-            </span>
+            <span className="text-gray-600 dark:text-gray-400 text-sm">{t('app.footer')}</span>
             <div className="flex items-center space-x-4">
               <a
                 href="https://github.com/Kearney3/dati"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 group"
-                title="查看项目源码"
+                title={t('app.github')}
               >
                 <Github className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-sm font-medium">GitHub</span>
+                <span className="text-sm font-medium">{t('app.github')}</span>
               </a>
               <span className="text-gray-400 dark:text-gray-500">|</span>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">
-                Made with ❤️ & Cursor
-              </span>
+              <span className="text-gray-500 dark:text-gray-400 text-xs">{t('app.made_with')}</span>
             </div>
           </div>
         </div>
