@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HeaderMapping as HeaderMappingType } from '../types';
 import { StatusBanner } from './StatusBanner';
 
@@ -11,16 +12,16 @@ interface HeaderMappingProps {
 }
 
 const MAPPING_CONFIG = {
-  question: { label: '题干', required: true },
-  type: { label: '题型', required: true },
-  answer: { label: '答案', required: true },
-  optionA: { label: '选项A', required: false },
-  optionB: { label: '选项B', required: false },
-  optionC: { label: '选项C', required: false },
-  optionD: { label: '选项D', required: false },
-  optionE: { label: '选项E', required: false },
-  optionF: { label: '选项F', required: false },
-  explanation: { label: '解析', required: false },
+  question: { key: 'mapping.labels.question', required: true },
+  type: { key: 'mapping.labels.type', required: true },
+  answer: { key: 'mapping.labels.answer', required: true },
+  optionA: { key: 'mapping.labels.optionA', required: false },
+  optionB: { key: 'mapping.labels.optionB', required: false },
+  optionC: { key: 'mapping.labels.optionC', required: false },
+  optionD: { key: 'mapping.labels.optionD', required: false },
+  optionE: { key: 'mapping.labels.optionE', required: false },
+  optionF: { key: 'mapping.labels.optionF', required: false },
+  explanation: { key: 'mapping.labels.explanation', required: false },
 } as const;
 
 export const HeaderMapping = ({ 
@@ -30,6 +31,7 @@ export const HeaderMapping = ({
   sheetName,
   onMappingStatusChange
 }: HeaderMappingProps) => {
+  const { t } = useTranslation();
   const handleChange = (key: keyof HeaderMappingType, value: string) => {
     onMappingChange({ ...mapping, [key]: value });
   };
@@ -44,11 +46,11 @@ export const HeaderMapping = ({
     const missingFields = requiredFields.filter(field => !mapping[field as keyof HeaderMappingType]);
 
     if (missingFields.length > 0) {
-      const missingLabels = missingFields.map(field => MAPPING_CONFIG[field as keyof typeof MAPPING_CONFIG].label);
+      const missingLabels = missingFields.map(field => t(MAPPING_CONFIG[field as keyof typeof MAPPING_CONFIG].key as any));
       return {
         status: 'error',
-        message: '全局映射不完整',
-        description: `缺少必填字段：${missingLabels.join('、')}`,
+        message: t('mapping.status_missing'),
+        description: t('mapping.status_missing_desc', { fields: missingLabels.join('、') }),
         color: 'danger',
         sheetName: sheetName,
         missingFields: missingFields
@@ -57,8 +59,8 @@ export const HeaderMapping = ({
 
     return {
       status: 'success',
-      message: '映射有效',
-      description: '所有必填字段已正确映射',
+      message: t('mapping.status_ok'),
+      description: t('mapping.status_ok_desc'),
       color: 'success',
       sheetName: sheetName
     };
@@ -74,20 +76,16 @@ export const HeaderMapping = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          全局映射
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('mapping.title')}</h3>
       </div>
       
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        将Excel列名与题目属性进行对应
-      </p>
+      <p className="text-sm text-gray-600 dark:text-gray-400">{t('mapping.helper')}</p>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {Object.entries(MAPPING_CONFIG).map(([key, config]) => (
           <div key={key} className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {config.label}
+              {t(config.key as any)}
               {config.required && <span className="text-danger-500 ml-1">*</span>}
             </label>
             <select
@@ -95,7 +93,7 @@ export const HeaderMapping = ({
               onChange={(e) => handleChange(key as keyof HeaderMappingType, e.target.value)}
               className="input"
             >
-              <option value="">-- 请选择 --</option>
+              <option value="">{t('mapping.select_placeholder')}</option>
               {headers.map((header, index) => (
                 <option key={`${header}-${index}`} value={header}>
                   {header}

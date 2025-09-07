@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -41,6 +42,7 @@ export const QuizScreen = ({
   isWrongQuestionsMode = false,
   onBackToFullQuiz
 }: QuizScreenProps) => {
+  const { t } = useTranslation();
   const [showNavPanel, setShowNavPanel] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackData, setFeedbackData] = useState<any>(null);
@@ -634,31 +636,31 @@ export const QuizScreen = ({
         className="btn btn-secondary text-sm px-2 sm:px-3 py-2 flex-1"
       >
         <ChevronLeft className="w-4 h-4 mr-1 sm:mr-2" />
-        <span className="hidden sm:inline">上一题</span>
-        <span className="sm:hidden">上</span>
+        <span className="hidden sm:inline">{t('quizui.prev')}</span>
+        <span className="sm:hidden">{t('quizui.prev')}</span>
       </button>
       
       {/* 提前交卷按钮 */}
       <button 
         onClick={handleEarlySubmit}
         className="btn btn-warning text-sm px-2 sm:px-3 py-2 flex-1"
-        title="提前交卷"
+        title={t('quizui.early_submit_title')}
       >
         <Newspaper className="w-4 h-4 mr-1 sm:mr-2" />
-        <span className="hidden sm:inline">提前交卷</span>
-        <span className="sm:hidden">交卷</span>
+        <span className="hidden sm:inline">{t('quizui.early_submit')}</span>
+        <span className="sm:hidden">{t('quizui.submit')}</span>
       </button>
       
       {quizState.currentQuestionIndex < questions.length - 1 ? (
         <button onClick={handleNext} className="btn btn-primary text-sm px-2 sm:px-3 py-2 flex-1">
-          <span className="hidden sm:inline">下一题</span>
-          <span className="sm:hidden">下</span>
+          <span className="hidden sm:inline">{t('quizui.next')}</span>
+          <span className="sm:hidden">{t('quizui.next')}</span>
           <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
         </button>
       ) : (
         <button onClick={handleSubmit} className="btn btn-success text-sm px-2 sm:px-3 py-2 flex-1">
-          <span className="hidden sm:inline">提交试卷</span>
-          <span className="sm:hidden">提交</span>
+          <span className="hidden sm:inline">{t('quizui.submit_paper')}</span>
+          <span className="sm:hidden">{t('quizui.submit')}</span>
         </button>
       )}
     </div>
@@ -672,7 +674,7 @@ export const QuizScreen = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
               <span className="text-lg">📱</span>
-              <span>移动设备：在题干上左右滑动可切换题目</span>
+              <span>{t('quizui.mobile_swipe_banner')}</span>
             </div>
             <button
               onClick={() => setShowMobileHint(false)}
@@ -692,7 +694,7 @@ export const QuizScreen = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
               <span className="text-lg">🎯</span>
-              <span>错题练习模式：当前正在练习 {questions.length} 道错题</span>
+              <span>{t('quizui.wrong_mode_banner', { count: questions.length })}</span>
             </div>
             <div className="flex items-center gap-2">
               {onBackToFullQuiz && (
@@ -700,7 +702,7 @@ export const QuizScreen = ({
                   onClick={onBackToFullQuiz}
                   className="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 font-medium text-sm"
                 >
-                  返回完整题库
+                  {t('quizui.back_full_quiz')}
                 </button>
               )}
               <button
@@ -730,7 +732,7 @@ export const QuizScreen = ({
               }}
             />
             <span className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-white text-xs sm:text-sm font-medium z-10 px-2">
-              {quizState.currentQuestionIndex + 1} / {questions.length}
+              {t('quizui.progress', { current: quizState.currentQuestionIndex + 1, total: questions.length })}
             </span>
           </div>
           <div className="flex justify-center">
@@ -739,10 +741,10 @@ export const QuizScreen = ({
                 <button
                   onClick={handleHint}
                   className="btn btn-warning text-sm px-3 py-2 flex items-center justify-center"
-                  title="提示答案"
+                  title={t('quizui.hint_answer')}
                 >
                   <HelpCircle className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">提示答案</span>
+                  <span className="hidden sm:inline">{t('quizui.hint_button')}</span>
                 </button>
               )}
               
@@ -750,10 +752,10 @@ export const QuizScreen = ({
               <button
                 onClick={() => setShowShortcuts(!showShortcuts)}
                 className="btn btn-info text-sm px-3 py-2 flex items-center justify-center"
-                title="快捷键提示"
+                title={t('quizui.keyboard_shortcuts_title')}
               >
                 <Keyboard className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">快捷键</span>
+                <span className="hidden sm:inline">{t('quizui.shortcuts_button')}</span>
               </button>
 
 
@@ -761,32 +763,32 @@ export const QuizScreen = ({
               <button
                 onClick={() => setShowQuizSettings(!showQuizSettings)}
                 className="btn btn-secondary text-sm px-3 py-2 flex items-center justify-center"
-                title="答题设置"
+                title={t('quizui.settings_title')}
               >
                 <svg className="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="hidden sm:inline">答题设置</span>
+                <span className="hidden sm:inline">{t('quizui.settings_button')}</span>
               </button>
               
               
               <button
                 onClick={() => setShowNavPanel(!showNavPanel)}
                 className="btn btn-success text-sm px-3 py-2 flex items-center justify-center"
-                title="题号导航"
+                title={t('quizui.nav_panel_title')}
               >
                 <Grid className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">导航</span>
+                <span className="hidden sm:inline">{t('quizui.nav_button')}</span>
               </button>
               
               <button
                 onClick={onExit}
                 className="btn btn-danger text-sm px-3 py-2 flex items-center justify-center"
-                title="返回主页"
+                title={t('quizui.back_home')}
               >
                 <Home className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">返回主页</span>
+                <span className="hidden sm:inline">{t('quizui.back_button')}</span>
               </button>
             </div>
           </div>
@@ -797,34 +799,34 @@ export const QuizScreen = ({
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs text-blue-600 dark:text-blue-400">
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">←</kbd>
-                  <span>上一题</span>
+                  <span>{t('quizui.prev')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">→</kbd>
-                  <span>下一题</span>
+                  <span>{t('quizui.next')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">A-F</kbd>
-                  <span>选择答案</span>
+                  <span>{t('quizui.hint_answer')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">1-6</kbd>
-                  <span>选择答案（对应A-F）</span>
+                  <span>{t('quizui.hint_answer')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">空格</kbd>
-                  <span>答案提示</span>
+                  <span>{t('quizui.hint_answer')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">N</kbd>
-                  <span>题目导航</span>
+                  <span>{t('quizui.nav_button')}</span>
                 </div>
               </div>
               
               {/* 移动设备操作提示 */}
               <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
                 <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-2">
-                  📱 移动设备操作：在题干位置上左右滑动切换题目
+                  📱 {t('quizui.mobile_swipe_banner')}
                 </div>
               </div>
             </div>
@@ -838,7 +840,7 @@ export const QuizScreen = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">切题按钮位置</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('quizui.settings_nav_position')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -849,7 +851,7 @@ export const QuizScreen = ({
                           : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
                       }`}
                     >
-                      底部
+                      {t('quizui.position_bottom')}
                     </button>
                     <button
                       onClick={() => setNavButtonsOnTop(true)}
@@ -859,7 +861,7 @@ export const QuizScreen = ({
                           : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
                       }`}
                     >
-                      顶部
+                      {t('quizui.position_top')}
                     </button>
                   </div>
                 </div>
@@ -868,7 +870,7 @@ export const QuizScreen = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">👆</span>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">滑动切换题目</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('quizui.swipe_toggle')}</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -884,7 +886,7 @@ export const QuizScreen = ({
                 {/* 状态提示 */}
                 {!swipeEnabled && (
                   <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs text-yellow-700 dark:text-yellow-300">
-                    💡 已禁用滑动切换，请使用切题按钮切换题目
+                    💡 {t('quizui.swipe_disabled_tip')}
                   </div>
                 )}
 
@@ -894,17 +896,17 @@ export const QuizScreen = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🎯</span>
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">错题练习模式</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('quizui.wrong_mode')}</span>
                       </div>
                       <button
                         onClick={onBackToFullQuiz}
                         className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-xs font-medium transition-colors"
                       >
-                        返回完整题库
+                        {t('quizui.back_full_quiz')}
                       </button>
                     </div>
                     <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs text-orange-700 dark:text-orange-300">
-                      💡 当前正在练习 {questions.length} 道错题，点击按钮可返回完整题库
+                      💡 {t('quizui.wrong_mode_tip', { count: questions.length })}
                     </div>
                   </div>
                 )}
@@ -948,12 +950,12 @@ export const QuizScreen = ({
               {swipeManager.swipeState.direction === 'left' ? (
                 <>
                   <ChevronRight className="w-5 h-5" />
-                  <span className="font-medium">下一题</span>
+                  <span className="font-medium">{t('quizui.swipe_next')}</span>
                 </>
               ) : (
                 <>
                   <ChevronLeft className="w-5 h-5" />
-                  <span className="font-medium">上一题</span>
+                  <span className="font-medium">{t('quizui.swipe_prev')}</span>
                 </>
               )}
             </div>
@@ -1146,7 +1148,7 @@ export const QuizScreen = ({
                 <div key={index} className="relative">
                   <input
                     type="text"
-                    placeholder={`请填写第 ${index + 1} 个答案`}
+                    placeholder={t('quizui.fill_placeholder', { index: index + 1 })}
                     value={currentAnswer ? currentAnswer.split(settings.fillBlankSeparator || '|')[index] || '' : ''}
                     onChange={(e) => {
                       const separator = settings.fillBlankSeparator || '|';
@@ -1210,21 +1212,21 @@ export const QuizScreen = ({
                 <XCircle className="w-5 h-5 text-danger-600 mr-2" />
               )}
               <span className="font-medium">
-                {settings.mode === 'recite' ? '正确答案' : 
-                 feedbackData.isCorrect ? '回答正确！' : '回答错误'}
+                {settings.mode === 'recite' ? t('quizui.correct_answer_title') : 
+                 feedbackData.isCorrect ? t('quizui.answer_correct') : t('quizui.answer_wrong')}
               </span>
             </div>
             {feedbackData.userAnswerText && (
               <p className="text-gray-700 dark:text-gray-300 mb-2">
-                您的答案: <span dangerouslySetInnerHTML={{ __html: feedbackData.userAnswerText }} />
+                {t('quizui.your_answer')} <span dangerouslySetInnerHTML={{ __html: feedbackData.userAnswerText }} />
               </p>
             )}
             <p className="text-gray-700 dark:text-gray-300">
-              正确答案: <span dangerouslySetInnerHTML={{ __html: feedbackData.correctAnswerText }} />
+              {t('quizui.correct_answer')} <span dangerouslySetInnerHTML={{ __html: feedbackData.correctAnswerText }} />
             </p>
             {currentQuestion.explanation && (
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                <strong>解析:</strong> {currentQuestion.explanation}
+                <strong>{t('quizui.explanation')}</strong> {currentQuestion.explanation}
               </p>
             )}
           </div>
@@ -1252,13 +1254,13 @@ export const QuizScreen = ({
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-4xl w-full mx-2 sm:mx-4 max-h-[85vh] sm:max-h-[80vh] flex flex-col relative overflow-hidden">
             <div className="flex justify-center items-center mb-4 pt-2 relative">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                题目导航
+                {t('quizui.nav_panel_title')}
               </h3>
               {/* 关闭按钮与标题水平对齐 */}
               <button
                 onClick={() => setShowNavPanel(false)}
                 className="absolute right-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center transition-colors duration-200"
-                title="关闭导航"
+                title={t('quizui.close_nav')}
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1299,20 +1301,20 @@ export const QuizScreen = ({
             <div className="flex items-center mb-4">
               <AlertCircle className="w-6 h-6 text-warning-600 mr-3" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                确认提前交卷
+                {t('quizui.early_submit_confirm_title')}
               </h3>
             </div>
             
             <div className="mb-6">
               <p className="text-gray-700 dark:text-gray-300 mb-3">
-                您确定要提前交卷吗？
+                {t('quizui.early_submit_confirm_desc')}
               </p>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  已答题数：{quizState.userAnswers.filter(a => a !== null).length} / {questions.length}
+                  {t('quizui.answered_count', { answered: quizState.userAnswers.filter(a => a !== null).length, total: questions.length })}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  未答题数：{quizState.userAnswers.filter(a => a === null).length}
+                  {t('quizui.unanswered_count', { count: quizState.userAnswers.filter(a => a === null).length })}
                 </p>
               </div>
             </div>
@@ -1322,13 +1324,13 @@ export const QuizScreen = ({
                 onClick={handleCancelSubmit}
                 className="btn btn-secondary"
               >
-                取消
+                {t('common.cancel', { defaultValue: '取消' })}
               </button>
               <button
                 onClick={handleConfirmSubmit}
                 className="btn btn-warning"
               >
-                确认交卷
+                {t('quizui.early_submit')}
               </button>
             </div>
           </div>

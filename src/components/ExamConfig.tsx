@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ExamConfig as ExamConfigType, ExamSettings, QuestionRange } from '../types';
 import { loadExamConfig, saveExamConfig } from '../utils/storage';
 import { StatusBanner } from './StatusBanner';
@@ -12,6 +13,7 @@ interface ExamConfigProps {
 }
 
 export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets = [], questions = [] }: ExamConfigProps) => {
+  const { t } = useTranslation();
   const [configs, setConfigs] = useState<ExamConfigType[]>([]);
   const [examDragState, setExamDragState] = useState<{
     isDragging: boolean;
@@ -231,8 +233,8 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
     if (hasInvalidConfigs) {
       return {
         status: 'error',
-        message: '配置有误',
-        description: '存在无效的题目数量或分值设置',
+        message: t('exam.status_error_title'),
+        description: t('exam.status_error_desc'),
         color: 'danger'
       };
     }
@@ -240,8 +242,8 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
     if (hasZeroScores) {
       return {
         status: 'warning',
-        message: '分值设置',
-        description: '有题目数量但分值为0，请检查分值设置',
+        message: t('exam.status_zero_title'),
+        description: t('exam.status_zero_desc'),
         color: 'warning'
       };
     }
@@ -249,8 +251,8 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
     if (!hasQuestions) {
       return {
         status: 'info',
-        message: '请设置题目',
-        description: '请为至少一种题型设置题目数量',
+        message: t('exam.status_none_title'),
+        description: t('exam.status_none_desc'),
         color: 'info'
       };
     }
@@ -258,16 +260,16 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
     if (exceedsAvailable) {
       return {
         status: 'warning',
-        message: '题目超限',
-        description: `配置题目数(${totalConfiguredQuestions})超过可用题目数(${totalAvailableQuestions})`,
+        message: t('exam.status_exceed_title'),
+        description: t('exam.status_exceed_desc', { configured: totalConfiguredQuestions, available: totalAvailableQuestions }),
         color: 'warning'
       };
     }
 
     return {
       status: 'success',
-      message: '配置有效',
-      description: `已配置 ${totalConfiguredQuestions} 题，满分 ${parseFloat(configs.reduce((sum, config) => sum + (config.count * config.score), 0).toFixed(1))} 分`,
+      message: t('exam.status_ok_title'),
+      description: t('exam.status_ok_desc', { configured: totalConfiguredQuestions, score: parseFloat(configs.reduce((sum, config) => sum + (config.count * config.score), 0).toFixed(1)) }),
       color: 'success'
     };
   };
@@ -280,7 +282,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
           <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
             <span>📊</span>
-            <span>已选择 {selectedSheets.length} 个工作表，总计 {totalQuestions} 题</span>
+            <span>{t('exam.selected_summary', { sheets: selectedSheets.length, questions: totalQuestions })}</span>
           </div>
         </div>
       )}
@@ -295,14 +297,14 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                   {config.questionType}
                 </h4>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  题库中共有 {maxQuestions} 题
+                  {t('exam.in_bank_total', { count: maxQuestions })}
                 </span>
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    出题数量
+                    {t('exam.count_label')}
                   </label>
                   <input
                     type="number"
@@ -314,13 +316,13 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                     placeholder="0"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    最大可出 {maxQuestions} 题
+                    {t('exam.max_available', { count: maxQuestions })}
                   </p>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    每题分值
+                    {t('exam.score_label')}
                   </label>
                   <input
                     type="number"
@@ -338,7 +340,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    答题范围
+                    {t('exam.range_label')}
                   </label>
                   <button
                     type="button"
@@ -349,7 +351,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
-                    {config.useCustomRanges ? '自定义' : '全选'}
+                    {config.useCustomRanges ? t('exam.toggle_custom') : t('exam.toggle_all')}
                   </button>
                 </div>
                 
@@ -358,7 +360,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                     {/* 可视化答题范围 */}
                     <div>
                       <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
-                        范围可视化
+                        {t('exam.range_visualization')}
                       </label>
                       <div className="relative h-6 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
                         {/* 背景网格 */}
@@ -382,7 +384,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                                 left: `${startPercent}%`,
                                 width: `${width}%`
                               }}
-                              title={`范围 ${rangeIndex + 1}: ${range.start}-${range.end}`}
+                              title={`${t('exam.range_n', { index: rangeIndex + 1 })}: ${range.start}-${range.end}`}
                             ></div>
                           );
                         })}
@@ -400,7 +402,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                       <div key={rangeIndex} data-config-index={index} data-range-index={rangeIndex} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <label className="block text-xs text-gray-600 dark:text-gray-400">
-                            范围 {rangeIndex + 1}
+                            {t('exam.range_n', { index: rangeIndex + 1 })}
                           </label>
                           <button
                             type="button"
@@ -410,7 +412,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                             }}
                             className="px-1 py-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs"
                           >
-                            删除
+                            {t('exam.delete')}
                           </button>
                         </div>
                         
@@ -459,7 +461,7 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                                 width: `${((range.end - range.start + 1) / maxQuestions) * 100}%`
                               }}
                               onMouseDown={(e) => handleExamRangeDragStart(e, index, rangeIndex)}
-                              title="拖拽移动范围"
+                              title={t('exam.drag_to_move')}
                             ></div>
                           </div>
                           
@@ -513,18 +515,18 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
                       }}
                       className="btn btn-secondary text-xs px-2 py-1"
                     >
-                      添加范围
+                      {t('exam.add_range')}
                     </button>
                   </div>
                 ) : (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    将答题该类型所有题目
+                    {t('exam.include_all_type')}
                   </p>
                 )}
               </div>
               
               <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                小计: {config.count} 题 × {config.score} 分 = {config.count * config.score} 分
+                {t('exam.subtotal', { count: config.count, score: config.score, sum: config.count * config.score })}
               </div>
             </div>
           );
@@ -535,10 +537,10 @@ export const ExamConfig = ({ onConfigChange, totalQuestions = 0, selectedSheets 
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <p className="font-medium text-gray-900 dark:text-white">
-              总计: {configs.reduce((sum, config) => sum + config.count, 0)} 题
+              {t('exam.total_questions', { count: configs.reduce((sum, config) => sum + config.count, 0) })}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              满分: {configs.reduce((sum, config) => sum + (config.count * config.score), 0)} 分
+              {t('exam.total_score', { score: configs.reduce((sum, config) => sum + (config.count * config.score), 0) })}
             </p>
           </div>
         </div>
